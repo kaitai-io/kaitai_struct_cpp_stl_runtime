@@ -158,11 +158,11 @@ public:
     std::string read_bytes(std::streamsize len);
     std::string read_bytes_full();
     std::string read_bytes_term(char term, bool include, bool consume, bool eos_error);
-    std::string ensure_fixed_contents(std::string expected);
+    std::string ensure_fixed_contents(const std::string& expected);
 
-    static std::string bytes_strip_right(std::string src, char pad_byte);
-    static std::string bytes_terminate(std::string src, char term, bool include);
-    static std::string bytes_to_str(std::string src, std::string src_enc);
+    static std::string bytes_strip_right(const std::string& src, char pad_byte);
+    static std::string bytes_terminate(const std::string& src, char term, bool include);
+    static std::string bytes_to_str(std::string src, const std::string& src_enc);
 
     //@}
 
@@ -176,7 +176,7 @@ public:
      * @param key value to XOR with
      * @return processed data
      */
-    static std::string process_xor_one(std::string data, uint8_t key);
+    static std::string process_xor_one(const std::string& data, uint8_t key);
 
     /**
      * Performs a XOR processing with given data, XORing every byte of input with a key
@@ -186,7 +186,7 @@ public:
      * @param key array of bytes to XOR with
      * @return processed data
      */
-    static std::string process_xor_many(std::string data, std::string key);
+    static std::string process_xor_many(const std::string& data, const std::string& key);
 
     /**
      * Performs a circular left rotation shift for a given buffer by a given amount of bits,
@@ -196,7 +196,7 @@ public:
      * @param amount number of bits to shift by
      * @return copy of source array with requested shift applied
      */
-    static std::string process_rotate_left(std::string data, int amount);
+    static std::string process_rotate_left(const std::string& data, int amount);
 
 #ifdef KS_ZLIB
     /**
