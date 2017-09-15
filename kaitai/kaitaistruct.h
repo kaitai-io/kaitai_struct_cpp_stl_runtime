@@ -7,12 +7,12 @@ namespace kaitai {
 
 class kstruct {
 public:
-    kstruct(kstream *_io) { m__io = _io; };
-    virtual ~kstruct() {};
+    kstruct(kstream *_io) { m__io = _io; }
+    virtual ~kstruct() {}
 protected:
     kstream *m__io;
 public:
-    kstream *_io() { return m__io; };
+    kstream *_io() { return m__io; }
 };
 
 }
