@@ -343,7 +343,11 @@ uint64_t kaitai::kstream::get_mask_ones(int n) {
 
 std::string kaitai::kstream::read_bytes(std::streamsize len) {
     std::vector<char> result(len);
-    m_io->read(&result[0], len);
+
+    if (len > 0 ) {
+        m_io->read(&result[0], len);
+    }
+
     return std::string(result.begin(), result.end());
 }
 
