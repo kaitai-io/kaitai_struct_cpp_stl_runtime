@@ -24,6 +24,8 @@ set (SOURCES
     kaitai/kaitaistream.cpp
 )
 
+option(USE_STRING_ENCODING "Decode strings via iconv" ON)
+
 add_library (${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES})
 
 if (ZLIB_FOUND)
@@ -35,7 +37,14 @@ endif()
 if(ICONV_FOUND)
     target_include_directories(${PROJECT_NAME} PRIVATE ${ICONV_INCLUDE_DIRS})
     target_link_libraries(${PROJECT_NAME} PRIVATE ${ICONV_LIBRARIES})
+endif()
+
+if (ICONV_FOUND AND USE_STRING_ENCODING)
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DKS_STR_ENCODING_ICONV)
+elseif (NOT USE_STRING_ENCODING)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE -DKS_STR_ENCODING_NONE)
+else()
+    # User action requested
 endif()
 
 if (WIN32)
