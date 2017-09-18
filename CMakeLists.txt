@@ -24,7 +24,7 @@ set (SOURCES
     kaitai/kaitaistream.cpp
 )
 
-option(USE_STRING_ENCODING "Decode strings via iconv" ON)
+set(STRING_ENCODING_TYPE "ICONV" CACHE STRING "Set the way strings have to be encoded (ICONV|NONE|...)")
 
 add_library (${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES})
 
@@ -39,9 +39,9 @@ if(ICONV_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE ${ICONV_LIBRARIES})
 endif()
 
-if (ICONV_FOUND AND USE_STRING_ENCODING)
+if (STRING_ENCODING_TYPE STREQUAL "ICONV")
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DKS_STR_ENCODING_ICONV)
-elseif (NOT USE_STRING_ENCODING)
+elseif (STRING_ENCODING_TYPE STREQUAL "NONE")
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DKS_STR_ENCODING_NONE)
 else()
     # User action requested
