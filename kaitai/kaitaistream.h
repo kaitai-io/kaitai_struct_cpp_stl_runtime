@@ -14,9 +14,9 @@ namespace kaitai {
 /**
  * Kaitai Stream class (kaitai::kstream) is an implementation of
  * <a href="https://github.com/kaitai-io/kaitai_struct/wiki/Kaitai-Struct-stream-API">Kaitai Struct stream API</a>
- * for C++/STL. It's implemented as a wrapper over generic STL std::istream.
+ * for C++/STL. It's implemented as a wrapper over generic STL std::iostream.
  *
- * It provides a wide variety of simple methods to read (parse) binary
+ * It provides a wide variety of simple methods to read (parse) and write (construct) binary
  * representations of primitive types, such as integer and floating
  * point numbers, byte arrays and strings, and also provides stream
  * positioning / navigation methods with unified cross-language and
@@ -31,10 +31,10 @@ namespace kaitai {
 class kstream {
 public:
     /**
-     * Constructs new Kaitai Stream object, wrapping a given std::istream.
-     * \param io istream object to use for this Kaitai Stream
+     * Constructs new Kaitai Stream object, wrapping a given std::iostream.
+     * \param io iostream object to use for this Kaitai Stream
      */
-    kstream(std::istream* io);
+    kstream(std::iostream* io);
 
     /**
      * Constructs new Kaitai Stream object, wrapping a given in-memory data
@@ -42,6 +42,10 @@ public:
      * \param data data buffer to use for this Kaitai Stream
      */
     kstream(std::string& data);
+
+    void set_stream(std::iostream* io);
+
+    void set_stream(std::string& data);
 
     void close();
 
@@ -84,44 +88,58 @@ public:
     // ------------------------------------------------------------------------
 
     int8_t read_s1();
+    void write_s1(int8_t t);
 
     // ........................................................................
     // Big-endian
     // ........................................................................
 
     int16_t read_s2be();
+    void write_s2be(int16_t t);
     int32_t read_s4be();
+    void write_s4be(int32_t t);
     int64_t read_s8be();
+    void write_s8be(int64_t t);
 
     // ........................................................................
     // Little-endian
     // ........................................................................
 
     int16_t read_s2le();
+    void write_s2le(int16_t t);
     int32_t read_s4le();
+    void write_s4le(int32_t t);
     int64_t read_s8le();
+    void write_s8le(int64_t t);
 
     // ------------------------------------------------------------------------
     // Unsigned
     // ------------------------------------------------------------------------
 
     uint8_t read_u1();
+    void write_u1(uint8_t t);
 
     // ........................................................................
     // Big-endian
     // ........................................................................
 
     uint16_t read_u2be();
+    void write_u2be(uint16_t t);
     uint32_t read_u4be();
+    void write_u4be(uint32_t t);
     uint64_t read_u8be();
+    void write_u8be(uint64_t t);
 
     // ........................................................................
     // Little-endian
     // ........................................................................
 
     uint16_t read_u2le();
+    void write_u2le(uint16_t t);
     uint32_t read_u4le();
+    void write_u4le(uint32_t t);
     uint64_t read_u8le();
+    void write_u8le(uint64_t t);
 
     //@}
 
@@ -133,14 +151,18 @@ public:
     // ........................................................................
 
     float read_f4be();
+    void write_f4be(float t);
     double read_f8be();
+    void write_f8be(double t);
 
     // ........................................................................
     // Little-endian
     // ........................................................................
 
     float read_f4le();
+    void write_f4le(float t);
     double read_f8le();
+    void write_f8le(double t);
 
     //@}
 
@@ -149,6 +171,7 @@ public:
 
     void align_to_byte();
     uint64_t read_bits_int(int n);
+    void write_bits_int(uint64_t t, int n);
 
     //@}
 
@@ -156,13 +179,18 @@ public:
     //@{
 
     std::string read_bytes(std::streamsize len);
+    void write_bytes(const std::string &value, std::streamsize len);
     std::string read_bytes_full();
+    void write_bytes_full(const std::string &value);
     std::string read_bytes_term(char term, bool include, bool consume, bool eos_error);
     std::string ensure_fixed_contents(std::string expected);
+    std::string read_fixed_contents(std::string expected);
+    void write_fixed_contents(const std::string &actual, std::string expected);
 
     static std::string bytes_strip_right(std::string src, char pad_byte);
     static std::string bytes_terminate(std::string src, char term, bool include);
     static std::string bytes_to_str(std::string src, std::string src_enc);
+    static std::string str_to_bytes(std::string src, std::string dst_enc);
 
     //@}
 
@@ -232,8 +260,8 @@ public:
     static std::string reverse(std::string val);
 
 private:
-    std::istream* m_io;
-    std::istringstream m_io_str;
+    std::iostream* m_io;
+    std::stringstream m_io_str;
     int m_bits_left;
     uint64_t m_bits;
 
