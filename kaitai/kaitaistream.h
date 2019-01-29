@@ -36,16 +36,9 @@ public:
      */
     kstream(std::iostream* io);
 
-    /**
-     * Constructs new Kaitai Stream object, wrapping a given in-memory data
-     * buffer.
-     * \param data data buffer to use for this Kaitai Stream
-     */
-    kstream(std::string& data);
+    kstream(const kstream& other);
 
     void set_stream(std::iostream* io);
-
-    void set_stream(std::string& data);
 
     void close();
 
@@ -261,7 +254,6 @@ public:
 
 private:
     std::iostream* m_io;
-    std::stringstream m_io_str;
     int m_bits_left;
     uint64_t m_bits;
 

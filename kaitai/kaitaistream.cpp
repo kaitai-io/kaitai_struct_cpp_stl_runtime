@@ -27,23 +27,19 @@
 #include <stdexcept>
 
 kaitai::kstream::kstream(std::iostream* io): m_io(io) {
-    init();
+    if (m_io) {
+        init();
+    }
 }
 
-kaitai::kstream::kstream(std::string& data): m_io_str(data) {
-    m_io = &m_io_str;
-    init();
+kaitai::kstream::kstream(const kaitai::kstream &other): m_io(other.m_io), m_bits_left(other.m_bits_left), m_bits(other.m_bits) {
 }
 
 void kaitai::kstream::set_stream(std::iostream* io) {
     m_io = io;
-    init();
-}
-
-void kaitai::kstream::set_stream(std::string& data) {
-    m_io_str = std::stringstream(data);
-    m_io = &m_io_str;
-    init();
+    if (m_io) {
+        init();
+    }
 }
 
 void kaitai::kstream::init() {
