@@ -1,19 +1,11 @@
 project (kaitai_struct_cpp_stl_runtime CXX)
 cmake_minimum_required (VERSION 3.3)
 
-set (CMAKE_INCLUDE_CURRENT_DIR ON)
+list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake)
+
 
 find_package(ZLIB)
-
-find_path(ICONV_INCLUDE_DIRS iconv.h)
-mark_as_advanced(ICONV_INCLUDE_DIRS)
-find_library(ICONV_LIBRARIES NAMES libiconv libiconv-2 c)
-mark_as_advanced(ICONV_LIBRARIES)
-
-set(ICONV_FOUND FALSE)
-if(ICONV_INCLUDE_DIRS AND ICONV_LIBRARIES)
-    SET(ICONV_FOUND TRUE)
-endif()
+find_package(Iconv)
 
 set (HEADERS
     kaitai/kaitaistream.h
@@ -26,32 +18,29 @@ set (SOURCES
 
 set(STRING_ENCODING_TYPE "ICONV" CACHE STRING "Set the way strings have to be encoded (ICONV|NONE|...)")
 
-add_library (${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES})
+add_library (${PROJECT_NAME} SHARED ${SOURCES})
+
+target_include_directories(${PROJECT_NAME} 
+    PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:include/kaitai>
+    )
+
 
 if (ZLIB_FOUND)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${ZLIB_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ZLIB::ZLIB)
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DKS_ZLIB)
 endif()
-
-if(ICONV_FOUND)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${ICONV_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${ICONV_LIBRARIES})
-endif()
+if(Iconv_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE Iconv::Iconv)
+ endif()
 
 if (STRING_ENCODING_TYPE STREQUAL "ICONV")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DKS_STR_ENCODING_ICONV)
+   target_compile_definitions(${PROJECT_NAME} PRIVATE -DKS_STR_ENCODING_ICONV)
 elseif (STRING_ENCODING_TYPE STREQUAL "NONE")
-    target_compile_definitions(${PROJECT_NAME} PRIVATE -DKS_STR_ENCODING_NONE)
+   target_compile_definitions(${PROJECT_NAME} PRIVATE -DKS_STR_ENCODING_NONE)
 else()
     # User action requested
 endif()
 
-if (WIN32)
-    install(TARGETS ${PROJECT_NAME}
-        RUNTIME DESTINATION lib)
-else()
-    install (TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION lib
-    )
-endif()
+include(cmake/KaitaiRuntimeExportConfig.cmake)
