@@ -1,4 +1,4 @@
-#include <kaitai/kaitaistream.h>
+#include <kaitai/kistream.h>
 
 #if defined(__APPLE__)
 #include <machine/endian.h>
