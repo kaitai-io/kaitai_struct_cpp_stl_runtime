@@ -1,6 +1,8 @@
 #ifndef KAITAI_KISTREAM_H
 #define KAITAI_KISTREAM_H
 
+#include <kaitai/kio.h>
+
 #include <istream>
 #include <sstream>
 #include <stdint.h>
@@ -25,7 +27,7 @@ namespace kaitai {
  * That code, in turn, would use this class and API to do the actual parsing
  * job.
  */
-class kstream {
+class kistream : public virtual kio {
 public:
     /**
      * Constructs new Kaitai Stream object, wrapping a given std::istream.
@@ -39,8 +41,6 @@ public:
      * \param data data buffer to use for this Kaitai Stream
      */
     kstream(std::string& data);
-
-    void close();
 
     /** @name Stream positioning */
     //@{
@@ -157,43 +157,10 @@ public:
     std::string read_bytes_term(char term, bool include, bool consume, bool eos_error);
     std::string ensure_fixed_contents(std::string expected);
 
-    static std::string bytes_strip_right(std::string src, char pad_byte);
-    static std::string bytes_terminate(std::string src, char term, bool include);
-    static std::string bytes_to_str(std::string src, std::string src_enc);
-
     //@}
 
     /** @name Byte array processing */
     //@{
-
-    /**
-     * Performs a XOR processing with given data, XORing every byte of input with a single
-     * given value.
-     * @param data data to process
-     * @param key value to XOR with
-     * @return processed data
-     */
-    static std::string process_xor_one(std::string data, uint8_t key);
-
-    /**
-     * Performs a XOR processing with given data, XORing every byte of input with a key
-     * array, repeating key array many times, if necessary (i.e. if data array is longer
-     * than key array).
-     * @param data data to process
-     * @param key array of bytes to XOR with
-     * @return processed data
-     */
-    static std::string process_xor_many(std::string data, std::string key);
-
-    /**
-     * Performs a circular left rotation shift for a given buffer by a given amount of bits,
-     * using groups of 1 bytes each time. Right circular rotation should be performed
-     * using this procedure with corrected amount.
-     * @param data source data to process
-     * @param amount number of bits to shift by
-     * @return copy of source array with requested shift applied
-     */
-    static std::string process_rotate_left(std::string data, int amount);
 
 #ifdef KS_ZLIB
     /**
@@ -207,27 +174,6 @@ public:
 
     //@}
 
-    /**
-     * Performs modulo operation between two integers: dividend `a`
-     * and divisor `b`. Divisor `b` is expected to be positive. The
-     * result is always 0 <= x <= b - 1.
-     */
-    static int mod(int a, int b);
-
-    /**
-     * Converts given integer `val` to a decimal string representation.
-     * Should be used in place of std::to_string() (which is available only
-     * since C++11) in older C++ implementations.
-     */
-    static std::string to_string(int val);
-
-    /**
-     * Reverses given string `val`, so that the first character becomes the
-     * last and the last one becomes the first. This should be used to avoid
-     * the need of local variables at the caller.
-     */
-    static std::string reverse(std::string val);
-
 private:
     std::istream* m_io;
     std::istringstream m_io_str;
@@ -235,9 +181,6 @@ private:
     uint64_t m_bits;
 
     void init();
-    void exceptions_enable() const;
-
-    static uint64_t get_mask_ones(int n);
 
     static const int ZLIB_BUF_SIZE = 128 * 1024;
 };
