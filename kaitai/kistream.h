@@ -11,7 +11,7 @@
 namespace kaitai {
 
 /**
- * Kaitai Stream class (kaitai::kstream) is an implementation of
+ * Kaitai Stream class (kaitai::kistream) is an implementation of
  * <a href="https://github.com/kaitai-io/kaitai_struct/wiki/Kaitai-Struct-stream-API">Kaitai Struct stream API</a>
  * for C++/STL. It's implemented as a wrapper over generic STL std::istream.
  *
@@ -33,14 +33,14 @@ public:
      * Constructs new Kaitai Stream object, wrapping a given std::istream.
      * \param io istream object to use for this Kaitai Stream
      */
-    kstream(std::istream* io);
+    kistream(std::istream* io);
 
     /**
      * Constructs new Kaitai Stream object, wrapping a given in-memory data
      * buffer.
      * \param data data buffer to use for this Kaitai Stream
      */
-    kstream(std::string& data);
+    kistream(std::string& data);
 
     /** @name Stream positioning */
     //@{

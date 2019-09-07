@@ -43,7 +43,7 @@ public:
  */
 class validation_failed_error: public kstruct_error {
 public:
-    validation_failed_error(const std::string what, const kstream* io, const std::string src_path):
+    validation_failed_error(const std::string what, const kistream* io, const std::string src_path):
         kstruct_error(std::string("at pos ") + /*std::to_string(io->pos())*/ + ": validation failed:" + what, src_path),
         m_io(io)
     {
@@ -52,7 +52,7 @@ public:
 // "at pos #{io.pos}: validation failed: #{msg}"
 
 protected:
-    const kstream* m_io;
+    const kistream* m_io;
 };
 
 /**
@@ -62,7 +62,7 @@ protected:
 template<typename T>
 class validation_not_equal_error: public validation_failed_error {
 public:
-    validation_not_equal_error<T>(const T& expected, const T& actual, const kstream* io, const std::string src_path):
+    validation_not_equal_error<T>(const T& expected, const T& actual, const kistream* io, const std::string src_path):
         validation_failed_error("not equal", io, src_path),
         m_expected(expected),
         m_actual(actual)
