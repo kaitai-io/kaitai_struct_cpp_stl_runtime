@@ -20,11 +20,13 @@ set (HEADERS
     kaitai/kaitaistruct.h
     kaitai/kio.h
     kaitai/kistream.h
+    kaitai/kostream.h
 )
 
 set (SOURCES
     kaitai/kio.cpp
     kaitai/kistream.cpp
+    kaitai/kostream.cpp
 )
 
 set(STRING_ENCODING_TYPE "ICONV" CACHE STRING "Set the way strings have to be encoded (ICONV|NONE|...)")
