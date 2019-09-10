@@ -3,23 +3,25 @@
 #include <iostream>
 #include <stdexcept>
 
-kaitai::kio::kio() {
+using namespace ::kaitai;
+
+kio::kio() {
 }
 
-kaitai::kio::kio(std::ios* io) {
+kio::kio(std::ios* io) {
     init(io);
 }
 
-void kaitai::kio::init(std::ios* io) {
+void kio::init(std::ios* io) {
     m_io = io;
     exceptions_enable();
 }
 
-void kaitai::kio::close() {
+void kio::close() {
     //  m_io->close();
 }
 
-void kaitai::kio::exceptions_enable() const {
+void kio::exceptions_enable() const {
     m_io->exceptions(
         std::ios::eofbit |
         std::ios::failbit |
@@ -31,7 +33,7 @@ void kaitai::kio::exceptions_enable() const {
 // Byte arrays
 // ========================================================================
 
-std::string kaitai::kio::bytes_strip_right(std::string src, char pad_byte) {
+std::string kio::bytes_strip_right(std::string src, char pad_byte) {
     std::size_t new_len = src.length();
 
     while (new_len > 0 && src[new_len - 1] == pad_byte)
@@ -40,7 +42,7 @@ std::string kaitai::kio::bytes_strip_right(std::string src, char pad_byte) {
     return src.substr(0, new_len);
 }
 
-std::string kaitai::kio::bytes_terminate(std::string src, char term, bool include) {
+std::string kio::bytes_terminate(std::string src, char term, bool include) {
     std::size_t new_len = 0;
     std::size_t max_len = src.length();
 
@@ -57,7 +59,7 @@ std::string kaitai::kio::bytes_terminate(std::string src, char term, bool includ
 // Byte array processing
 // ========================================================================
 
-std::string kaitai::kio::process_xor_one(std::string data, uint8_t key) {
+std::string kio::process_xor_one(std::string data, uint8_t key) {
     size_t len = data.length();
     std::string result(len, ' ');
 
@@ -67,7 +69,7 @@ std::string kaitai::kio::process_xor_one(std::string data, uint8_t key) {
     return result;
 }
 
-std::string kaitai::kio::process_xor_many(std::string data, std::string key) {
+std::string kio::process_xor_many(std::string data, std::string key) {
     size_t len = data.length();
     size_t kl = key.length();
     std::string result(len, ' ');
@@ -83,7 +85,7 @@ std::string kaitai::kio::process_xor_many(std::string data, std::string key) {
     return result;
 }
 
-std::string kaitai::kio::process_rotate_left(std::string data, int amount) {
+std::string kio::process_rotate_left(std::string data, int amount) {
     size_t len = data.length();
     std::string result(len, ' ');
 
@@ -99,7 +101,7 @@ std::string kaitai::kio::process_rotate_left(std::string data, int amount) {
 // Misc utility methods
 // ========================================================================
 
-int kaitai::kio::mod(int a, int b) {
+int kio::mod(int a, int b) {
     if (b <= 0)
         throw std::invalid_argument("mod: divisor b <= 0");
     int r = a % b;
@@ -109,7 +111,7 @@ int kaitai::kio::mod(int a, int b) {
 }
 
 #include <stdio.h>
-std::string kaitai::kio::to_string(int val) {
+std::string kio::to_string(int val) {
     // if int is 32 bits, "-2147483648" is the longest string representation
     //   => 11 chars + zero => 12 chars
     // if int is 64 bits, "-9223372036854775808" is the longest
@@ -125,7 +127,7 @@ std::string kaitai::kio::to_string(int val) {
 }
 
 #include <algorithm>
-std::string kaitai::kio::reverse(std::string val) {
+std::string kio::reverse(std::string val) {
     std::reverse(val.begin(), val.end());
 
     return val;
@@ -135,7 +137,7 @@ std::string kaitai::kio::reverse(std::string val) {
 // Other internal methods
 // ========================================================================
 
-uint64_t kaitai::kio::get_mask_ones(int n) {
+uint64_t kio::get_mask_ones(int n) {
     if (n == 64) {
         return 0xFFFFFFFFFFFFFFFF;
     } else {
@@ -153,7 +155,7 @@ uint64_t kaitai::kio::get_mask_ones(int n) {
 #include <cerrno>
 #include <stdexcept>
 
-std::string kaitai::kio::bytes_to_str(std::string src, std::string src_enc) {
+std::string kio::bytes_to_str(std::string src, std::string src_enc) {
     iconv_t cd = iconv_open(KS_STR_DEFAULT_ENCODING, src_enc.c_str());
 
     if (cd == (iconv_t) -1) {
@@ -208,7 +210,7 @@ std::string kaitai::kio::bytes_to_str(std::string src, std::string src_enc) {
     return dst;
 }
 #elif defined(KS_STR_ENCODING_NONE)
-std::string kaitai::kio::bytes_to_str(std::string src, std::string src_enc) {
+std::string kio::bytes_to_str(std::string src, std::string src_enc) {
     return src;
 }
 #else
