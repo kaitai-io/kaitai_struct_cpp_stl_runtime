@@ -1,63 +1,32 @@
-#include <kaitai/kaitaistream.h>
-
-#if defined(__APPLE__)
-#include <machine/endian.h>
-#include <libkern/OSByteOrder.h>
-#define bswap_16(x) OSSwapInt16(x)
-#define bswap_32(x) OSSwapInt32(x)
-#define bswap_64(x) OSSwapInt64(x)
-#define __BYTE_ORDER    BYTE_ORDER
-#define __BIG_ENDIAN    BIG_ENDIAN
-#define __LITTLE_ENDIAN LITTLE_ENDIAN
-#elif defined(_MSC_VER) // !__APPLE__
-#include <stdlib.h>
-#define __LITTLE_ENDIAN     1234
-#define __BIG_ENDIAN        4321
-#define __BYTE_ORDER        __LITTLE_ENDIAN
-#define bswap_16(x) _byteswap_ushort(x)
-#define bswap_32(x) _byteswap_ulong(x)
-#define bswap_64(x) _byteswap_uint64(x)
-#else // !__APPLE__ or !_MSC_VER
-#include <endian.h>
-#include <byteswap.h>
-#endif
+#include <kaitai/kistream.h>
+#include <kaitai/endian.h>
 
 #include <iostream>
 #include <vector>
 #include <stdexcept>
 
-kaitai::kstream::kstream(std::istream* io) {
+using namespace ::kaitai;
+
+kistream::kistream(std::istream* io): kio(io) {
     m_io = io;
     init();
 }
 
-kaitai::kstream::kstream(std::string& data): m_io_str(data) {
+kistream::kistream(std::string& data): m_io_str(data) {
+    kio::init(&m_io_str);
     m_io = &m_io_str;
     init();
 }
 
-void kaitai::kstream::init() {
-    exceptions_enable();
+void kistream::init() {
     align_to_byte();
-}
-
-void kaitai::kstream::close() {
-    //  m_io->close();
-}
-
-void kaitai::kstream::exceptions_enable() const {
-    m_io->exceptions(
-        std::istream::eofbit |
-        std::istream::failbit |
-        std::istream::badbit
-    );
 }
 
 // ========================================================================
 // Stream positioning
 // ========================================================================
 
-bool kaitai::kstream::is_eof() const {
+bool kistream::is_eof() const {
     if (m_bits_left > 0) {
         return false;
     }
@@ -77,15 +46,15 @@ bool kaitai::kstream::is_eof() const {
     }
 }
 
-void kaitai::kstream::seek(uint64_t pos) {
+void kistream::seek(uint64_t pos) {
     m_io->seekg(pos);
 }
 
-uint64_t kaitai::kstream::pos() {
+uint64_t kistream::pos() {
     return m_io->tellg();
 }
 
-uint64_t kaitai::kstream::size() {
+uint64_t kistream::size() {
     std::iostream::pos_type cur_pos = m_io->tellg();
     m_io->seekg(0, std::ios::end);
     std::iostream::pos_type len = m_io->tellg();
@@ -101,7 +70,7 @@ uint64_t kaitai::kstream::size() {
 // Signed
 // ------------------------------------------------------------------------
 
-int8_t kaitai::kstream::read_s1() {
+int8_t kistream::read_s1() {
     char t;
     m_io->get(t);
     return t;
@@ -111,7 +80,7 @@ int8_t kaitai::kstream::read_s1() {
 // Big-endian
 // ........................................................................
 
-int16_t kaitai::kstream::read_s2be() {
+int16_t kistream::read_s2be() {
     int16_t t;
     m_io->read(reinterpret_cast<char *>(&t), 2);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -120,7 +89,7 @@ int16_t kaitai::kstream::read_s2be() {
     return t;
 }
 
-int32_t kaitai::kstream::read_s4be() {
+int32_t kistream::read_s4be() {
     int32_t t;
     m_io->read(reinterpret_cast<char *>(&t), 4);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -129,7 +98,7 @@ int32_t kaitai::kstream::read_s4be() {
     return t;
 }
 
-int64_t kaitai::kstream::read_s8be() {
+int64_t kistream::read_s8be() {
     int64_t t;
     m_io->read(reinterpret_cast<char *>(&t), 8);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -142,7 +111,7 @@ int64_t kaitai::kstream::read_s8be() {
 // Little-endian
 // ........................................................................
 
-int16_t kaitai::kstream::read_s2le() {
+int16_t kistream::read_s2le() {
     int16_t t;
     m_io->read(reinterpret_cast<char *>(&t), 2);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -151,7 +120,7 @@ int16_t kaitai::kstream::read_s2le() {
     return t;
 }
 
-int32_t kaitai::kstream::read_s4le() {
+int32_t kistream::read_s4le() {
     int32_t t;
     m_io->read(reinterpret_cast<char *>(&t), 4);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -160,7 +129,7 @@ int32_t kaitai::kstream::read_s4le() {
     return t;
 }
 
-int64_t kaitai::kstream::read_s8le() {
+int64_t kistream::read_s8le() {
     int64_t t;
     m_io->read(reinterpret_cast<char *>(&t), 8);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -173,7 +142,7 @@ int64_t kaitai::kstream::read_s8le() {
 // Unsigned
 // ------------------------------------------------------------------------
 
-uint8_t kaitai::kstream::read_u1() {
+uint8_t kistream::read_u1() {
     char t;
     m_io->get(t);
     return t;
@@ -183,7 +152,7 @@ uint8_t kaitai::kstream::read_u1() {
 // Big-endian
 // ........................................................................
 
-uint16_t kaitai::kstream::read_u2be() {
+uint16_t kistream::read_u2be() {
     uint16_t t;
     m_io->read(reinterpret_cast<char *>(&t), 2);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -192,7 +161,7 @@ uint16_t kaitai::kstream::read_u2be() {
     return t;
 }
 
-uint32_t kaitai::kstream::read_u4be() {
+uint32_t kistream::read_u4be() {
     uint32_t t;
     m_io->read(reinterpret_cast<char *>(&t), 4);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -201,7 +170,7 @@ uint32_t kaitai::kstream::read_u4be() {
     return t;
 }
 
-uint64_t kaitai::kstream::read_u8be() {
+uint64_t kistream::read_u8be() {
     uint64_t t;
     m_io->read(reinterpret_cast<char *>(&t), 8);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -214,7 +183,7 @@ uint64_t kaitai::kstream::read_u8be() {
 // Little-endian
 // ........................................................................
 
-uint16_t kaitai::kstream::read_u2le() {
+uint16_t kistream::read_u2le() {
     uint16_t t;
     m_io->read(reinterpret_cast<char *>(&t), 2);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -223,7 +192,7 @@ uint16_t kaitai::kstream::read_u2le() {
     return t;
 }
 
-uint32_t kaitai::kstream::read_u4le() {
+uint32_t kistream::read_u4le() {
     uint32_t t;
     m_io->read(reinterpret_cast<char *>(&t), 4);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -232,7 +201,7 @@ uint32_t kaitai::kstream::read_u4le() {
     return t;
 }
 
-uint64_t kaitai::kstream::read_u8le() {
+uint64_t kistream::read_u8le() {
     uint64_t t;
     m_io->read(reinterpret_cast<char *>(&t), 8);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -249,7 +218,7 @@ uint64_t kaitai::kstream::read_u8le() {
 // Big-endian
 // ........................................................................
 
-float kaitai::kstream::read_f4be() {
+float kistream::read_f4be() {
     uint32_t t;
     m_io->read(reinterpret_cast<char *>(&t), 4);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -258,7 +227,7 @@ float kaitai::kstream::read_f4be() {
     return reinterpret_cast<float&>(t);
 }
 
-double kaitai::kstream::read_f8be() {
+double kistream::read_f8be() {
     uint64_t t;
     m_io->read(reinterpret_cast<char *>(&t), 8);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -271,7 +240,7 @@ double kaitai::kstream::read_f8be() {
 // Little-endian
 // ........................................................................
 
-float kaitai::kstream::read_f4le() {
+float kistream::read_f4le() {
     uint32_t t;
     m_io->read(reinterpret_cast<char *>(&t), 4);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -280,7 +249,7 @@ float kaitai::kstream::read_f4le() {
     return reinterpret_cast<float&>(t);
 }
 
-double kaitai::kstream::read_f8le() {
+double kistream::read_f8le() {
     uint64_t t;
     m_io->read(reinterpret_cast<char *>(&t), 8);
 #if __BYTE_ORDER == __BIG_ENDIAN
@@ -293,12 +262,12 @@ double kaitai::kstream::read_f8le() {
 // Unaligned bit values
 // ========================================================================
 
-void kaitai::kstream::align_to_byte() {
+void kistream::align_to_byte() {
     m_bits_left = 0;
     m_bits = 0;
 }
 
-uint64_t kaitai::kstream::read_bits_int(int n) {
+uint64_t kistream::read_bits_int(int n) {
     int bits_needed = n - m_bits_left;
     if (bits_needed > 0) {
         // 1 bit  => 1 byte
@@ -332,19 +301,11 @@ uint64_t kaitai::kstream::read_bits_int(int n) {
     return res;
 }
 
-uint64_t kaitai::kstream::get_mask_ones(int n) {
-    if (n == 64) {
-        return 0xFFFFFFFFFFFFFFFF;
-    } else {
-        return ((uint64_t) 1 << n) - 1;
-    }
-}
-
 // ========================================================================
 // Byte arrays
 // ========================================================================
 
-std::string kaitai::kstream::read_bytes(std::streamsize len) {
+std::string kistream::read_bytes(std::streamsize len) {
     std::vector<char> result(len);
 
     // NOTE: streamsize type is signed, negative values are only *supposed* to not be used.
@@ -360,7 +321,7 @@ std::string kaitai::kstream::read_bytes(std::streamsize len) {
     return std::string(result.begin(), result.end());
 }
 
-std::string kaitai::kstream::read_bytes_full() {
+std::string kistream::read_bytes_full() {
     std::iostream::pos_type p1 = m_io->tellg();
     m_io->seekg(0, std::ios::end);
     std::iostream::pos_type p2 = m_io->tellg();
@@ -377,7 +338,7 @@ std::string kaitai::kstream::read_bytes_full() {
     return result;
 }
 
-std::string kaitai::kstream::read_bytes_term(char term, bool include, bool consume, bool eos_error) {
+std::string kistream::read_bytes_term(char term, bool include, bool consume, bool eos_error) {
     std::string result;
     std::getline(*m_io, result, term);
     if (m_io->eof()) {
@@ -395,7 +356,7 @@ std::string kaitai::kstream::read_bytes_term(char term, bool include, bool consu
     return result;
 }
 
-std::string kaitai::kstream::ensure_fixed_contents(std::string expected) {
+std::string kistream::ensure_fixed_contents(std::string expected) {
     std::string actual = read_bytes(expected.length());
 
     if (actual != expected) {
@@ -406,74 +367,14 @@ std::string kaitai::kstream::ensure_fixed_contents(std::string expected) {
     return actual;
 }
 
-std::string kaitai::kstream::bytes_strip_right(std::string src, char pad_byte) {
-    std::size_t new_len = src.length();
-
-    while (new_len > 0 && src[new_len - 1] == pad_byte)
-        new_len--;
-
-    return src.substr(0, new_len);
-}
-
-std::string kaitai::kstream::bytes_terminate(std::string src, char term, bool include) {
-    std::size_t new_len = 0;
-    std::size_t max_len = src.length();
-
-    while (new_len < max_len && src[new_len] != term)
-        new_len++;
-
-    if (include && new_len < max_len)
-        new_len++;
-
-    return src.substr(0, new_len);
-}
-
 // ========================================================================
 // Byte array processing
 // ========================================================================
 
-std::string kaitai::kstream::process_xor_one(std::string data, uint8_t key) {
-    size_t len = data.length();
-    std::string result(len, ' ');
-
-    for (size_t i = 0; i < len; i++)
-        result[i] = data[i] ^ key;
-
-    return result;
-}
-
-std::string kaitai::kstream::process_xor_many(std::string data, std::string key) {
-    size_t len = data.length();
-    size_t kl = key.length();
-    std::string result(len, ' ');
-
-    size_t ki = 0;
-    for (size_t i = 0; i < len; i++) {
-        result[i] = data[i] ^ key[ki];
-        ki++;
-        if (ki >= kl)
-            ki = 0;
-    }
-
-    return result;
-}
-
-std::string kaitai::kstream::process_rotate_left(std::string data, int amount) {
-    size_t len = data.length();
-    std::string result(len, ' ');
-
-    for (size_t i = 0; i < len; i++) {
-        uint8_t bits = data[i];
-        result[i] = (bits << amount) | (bits >> (8 - amount));
-    }
-
-    return result;
-}
-
 #ifdef KS_ZLIB
 #include <zlib.h>
 
-std::string kaitai::kstream::process_zlib(std::string data) {
+std::string kistream::process_zlib(std::string data) {
     int ret;
 
     unsigned char *src_ptr = reinterpret_cast<unsigned char*>(&data[0]);
@@ -516,116 +417,4 @@ std::string kaitai::kstream::process_zlib(std::string data) {
 
     return outstring;
 }
-#endif
-
-// ========================================================================
-// Misc utility methods
-// ========================================================================
-
-int kaitai::kstream::mod(int a, int b) {
-    if (b <= 0)
-        throw std::invalid_argument("mod: divisor b <= 0");
-    int r = a % b;
-    if (r < 0)
-        r += b;
-    return r;
-}
-
-#include <stdio.h>
-std::string kaitai::kstream::to_string(int val) {
-    // if int is 32 bits, "-2147483648" is the longest string representation
-    //   => 11 chars + zero => 12 chars
-    // if int is 64 bits, "-9223372036854775808" is the longest
-    //   => 20 chars + zero => 21 chars
-    char buf[25];
-    int got_len = snprintf(buf, sizeof(buf), "%d", val);
-
-    // should never happen, but check nonetheless
-    if (got_len > sizeof(buf))
-        throw std::invalid_argument("to_string: integer is longer than string buffer");
-
-    return std::string(buf);
-}
-
-#include <algorithm>
-std::string kaitai::kstream::reverse(std::string val) {
-    std::reverse(val.begin(), val.end());
-
-    return val;
-}
-
-// ========================================================================
-// Other internal methods
-// ========================================================================
-
-#ifndef KS_STR_DEFAULT_ENCODING
-#define KS_STR_DEFAULT_ENCODING "UTF-8"
-#endif
-
-#ifdef KS_STR_ENCODING_ICONV
-
-#include <iconv.h>
-#include <cerrno>
-#include <stdexcept>
-
-std::string kaitai::kstream::bytes_to_str(std::string src, std::string src_enc) {
-    iconv_t cd = iconv_open(KS_STR_DEFAULT_ENCODING, src_enc.c_str());
-
-    if (cd == (iconv_t) -1) {
-        if (errno == EINVAL) {
-            throw std::runtime_error("bytes_to_str: invalid encoding pair conversion requested");
-        } else {
-            throw std::runtime_error("bytes_to_str: error opening iconv");
-        }
-    }
-
-    size_t src_len = src.length();
-    size_t src_left = src_len;
-
-    // Start with a buffer length of double the source length.
-    size_t dst_len = src_len * 2;
-    std::string dst(dst_len, ' ');
-    size_t dst_left = dst_len;
-
-    char *src_ptr = &src[0];
-    char *dst_ptr = &dst[0];
-
-    while (true) {
-        size_t res = iconv(cd, &src_ptr, &src_left, &dst_ptr, &dst_left);
-
-        if (res == (size_t) -1) {
-            if (errno == E2BIG) {
-                // dst buffer is not enough to accomodate whole string
-                // enlarge the buffer and try again
-                size_t dst_used = dst_len - dst_left;
-                dst_left += dst_len;
-                dst_len += dst_len;
-                dst.resize(dst_len);
-
-                // dst.resize might have allocated destination buffer in another area
-                // of memory, thus our previous pointer "dst" will be invalid; re-point
-                // it using "dst_used".
-                dst_ptr = &dst[dst_used];
-            } else {
-                throw std::runtime_error("bytes_to_str: iconv error");
-            }
-        } else {
-            // conversion successful
-            dst.resize(dst_len - dst_left);
-            break;
-        }
-    }
-
-    if (iconv_close(cd) != 0) {
-        throw std::runtime_error("bytes_to_str: iconv close error");
-    }
-
-    return dst;
-}
-#elif defined(KS_STR_ENCODING_NONE)
-std::string kaitai::kstream::bytes_to_str(std::string src, std::string src_enc) {
-    return src;
-}
-#else
-#error Need to decide how to handle strings: please define one of: KS_STR_ENCODING_ICONV, KS_STR_ENCODING_NONE
 #endif
