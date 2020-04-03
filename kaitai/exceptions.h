@@ -163,6 +163,27 @@ protected:
     const T& m_actual;
 };
 
+/**
+ * Signals validation failure: we required "actual" value to match
+ * the regex, but it turned out that it's not.
+ */
+template<typename T>
+class validation_regex_match_error: public validation_failed_error {
+public:
+    validation_regex_match_error<T>(const T& regex, const T& actual, const kstream* io, const std::string src_path):
+        validation_failed_error("no regex match", io, src_path),
+        m_actual(actual)
+    {
+    }
+
+    // "not any of the list, got #{actual.inspect}"
+
+    virtual ~validation_regex_match_error<T>() KS_NOEXCEPT {};
+
+protected:
+    const T& m_actual;
+};
+
 }
 
 #endif
