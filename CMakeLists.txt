@@ -28,6 +28,7 @@ set(STRING_ENCODING_TYPE "ICONV" CACHE STRING "Set the way strings have to be en
 
 add_library (${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "kaitai/kaitaistream.h;kaitai/kaitaistruct.h")
+target_include_directories(${PROJECT_NAME} INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (ZLIB_FOUND)
     target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIRS})
