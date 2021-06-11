@@ -50,7 +50,9 @@ endif()
 
 if (WIN32)
     install(TARGETS ${PROJECT_NAME}
-        RUNTIME DESTINATION lib)
+        RUNTIME DESTINATION lib
+        PUBLIC_HEADER DESTINATION include/kaitai
+    )
 else()
     install (TARGETS ${PROJECT_NAME}
         LIBRARY DESTINATION lib
