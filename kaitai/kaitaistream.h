@@ -41,7 +41,7 @@ public:
      * buffer.
      * \param data data buffer to use for this Kaitai Stream
      */
-    kstream(std::string& data);
+    kstream(const std::string& data);
 
     void close();
 
