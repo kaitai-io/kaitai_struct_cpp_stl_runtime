@@ -54,13 +54,13 @@ endif()
 
 if (WIN32)
     install(TARGETS ${PROJECT_NAME}
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
+        ARCHIVE
+        RUNTIME
         PUBLIC_HEADER DESTINATION include/kaitai
     )
 else()
     install (TARGETS ${PROJECT_NAME}
-        LIBRARY DESTINATION lib
+        LIBRARY
         PUBLIC_HEADER DESTINATION include/kaitai
     )
 endif()
