@@ -26,9 +26,7 @@ set (SOURCES
 
 set(STRING_ENCODING_TYPE "ICONV" CACHE STRING "Set the way strings have to be encoded (ICONV|NONE|...)")
 
-if (WIN32)
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-endif()
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 add_library (${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "kaitai/kaitaistream.h;kaitai/kaitaistruct.h")
@@ -52,15 +50,9 @@ else()
     # User action requested
 endif()
 
-if (WIN32)
-    install(TARGETS ${PROJECT_NAME}
-        ARCHIVE
-        RUNTIME
-        PUBLIC_HEADER DESTINATION include/kaitai
-    )
-else()
-    install (TARGETS ${PROJECT_NAME}
-        LIBRARY
-        PUBLIC_HEADER DESTINATION include/kaitai
-    )
-endif()
+install(TARGETS ${PROJECT_NAME}
+    ARCHIVE
+    RUNTIME
+    LIBRARY
+    PUBLIC_HEADER DESTINATION include/kaitai
+)
