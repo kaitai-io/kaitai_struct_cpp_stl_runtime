@@ -18,6 +18,7 @@ endif()
 set (HEADERS
     kaitai/kaitaistream.h
     kaitai/kaitaistruct.h
+    kaitai/exceptions.h
 )
 
 set (SOURCES
@@ -29,7 +30,7 @@ set(STRING_ENCODING_TYPE "ICONV" CACHE STRING "Set the way strings have to be en
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 add_library (${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES})
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "kaitai/kaitaistream.h;kaitai/kaitaistruct.h")
+set_property(TARGET ${PROJECT_NAME} PROPERTY PUBLIC_HEADER ${HEADERS})
 
 if (ZLIB_FOUND)
     target_include_directories(${PROJECT_NAME} PRIVATE ${ZLIB_INCLUDE_DIRS})

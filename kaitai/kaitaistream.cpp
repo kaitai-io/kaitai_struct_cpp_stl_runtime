@@ -31,7 +31,7 @@ kaitai::kstream::kstream(std::istream* io) {
     init();
 }
 
-kaitai::kstream::kstream(std::string& data): m_io_str(data) {
+kaitai::kstream::kstream(const std::string& data): m_io_str(data) {
     m_io = &m_io_str;
     init();
 }
