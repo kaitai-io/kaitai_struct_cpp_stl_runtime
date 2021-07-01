@@ -52,8 +52,8 @@ else()
 endif()
 
 install(TARGETS ${PROJECT_NAME}
-    ARCHIVE
-    RUNTIME
-    LIBRARY
+    ARCHIVE DESTINATION lib
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
     PUBLIC_HEADER DESTINATION include/kaitai
 )
