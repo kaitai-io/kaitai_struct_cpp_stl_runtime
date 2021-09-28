@@ -379,19 +379,20 @@ uint64_t kaitai::kstream::get_mask_ones(int n) {
 // ========================================================================
 
 std::string kaitai::kstream::read_bytes(std::streamsize len) {
-    std::vector<char> result(len);
-
     // NOTE: streamsize type is signed, negative values are only *supposed* to not be used.
     // http://en.cppreference.com/w/cpp/io/streamsize
     if (len < 0) {
         throw std::runtime_error("read_bytes: requested a negative amount");
+    } else if (len == 0) {
+        return std::string();
+    } else if (len > size()) {
+        throw std::runtime_error("read_bytes: requested length greater than stream size");
     }
 
-    if (len > 0) {
-        m_io->read(&result[0], len);
-    }
+    std::string result(len, ' ');
+    m_io->read(&result[0], len);
 
-    return std::string(result.begin(), result.end());
+    return result;
 }
 
 std::string kaitai::kstream::read_bytes_full() {
