@@ -9,7 +9,7 @@
 #define __BYTE_ORDER    BYTE_ORDER
 #define __BIG_ENDIAN    BIG_ENDIAN
 #define __LITTLE_ENDIAN LITTLE_ENDIAN
-#elif defined(_MSC_VER) // !__APPLE__
+#elif defined(_MSC_VER) || defined(__MINGW32__)// !__APPLE__
 #include <stdlib.h>
 #define __LITTLE_ENDIAN     1234
 #define __BIG_ENDIAN        4321
@@ -573,7 +573,7 @@ std::string kaitai::kstream::to_string(int val) {
     // if int is 64 bits, "-9223372036854775808" is the longest
     //   => 20 chars + zero => 21 chars
     char buf[25];
-    int got_len = snprintf(buf, sizeof(buf), "%d", val);
+    size_t got_len = snprintf(buf, sizeof(buf), "%d", val);
 
     // should never happen, but check nonetheless
     if (got_len > sizeof(buf))
