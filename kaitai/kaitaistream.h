@@ -8,6 +8,15 @@
 #include <sstream>
 #include <stdint.h>
 #include <sys/types.h>
+#include <algorithm>
+#include <limits>
+
+// https://stackoverflow.com/a/40512515
+#if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
+#define KAITAI_STREAM_H_CPP11_SUPPORT
+#else
+#include <kaitai/detail/make_unsigned.h>
+#endif
 
 namespace kaitai {
 
@@ -224,7 +233,34 @@ public:
      * Should be used in place of std::to_string() (which is available only
      * since C++11) in older C++ implementations.
      */
-    static std::string to_string(int val);
+    template<typename I>
+#ifdef KAITAI_STREAM_H_CPP11_SUPPORT
+    // https://stackoverflow.com/a/27913885
+    typename std::enable_if<
+            std::is_integral<I>::value,
+            std::string
+    >::type
+#else
+    std::string
+#endif
+    static to_string(I val) {
+#ifdef KAITAI_STREAM_H_CPP11_SUPPORT
+        typedef typename std::make_unsigned<I>::type U;
+#else
+        typedef typename make_unsigned<I>::type U;
+#endif
+        // in theory, `digits10 + 3` would be enough (minus sign + leading digit
+        // + null terminator), but let's add a little more to be safe
+        char buf[std::numeric_limits<I>::digits10 + 5];
+        if (val < 0) {
+            buf[0] = '-';
+            // get absolute value without undefined behavior (https://stackoverflow.com/a/12231604)
+            unsigned_to_decimal<U>(-static_cast<U>(val), &buf[1]);
+        } else {
+            unsigned_to_decimal<U>(val, buf);
+        }
+        return std::string(buf);
+    }
 
     /**
      * Reverses given string `val`, so that the first character becomes the
@@ -257,6 +293,31 @@ private:
 
     void init();
     void exceptions_enable() const;
+
+    template<typename U>
+#ifdef KAITAI_STREAM_H_CPP11_SUPPORT
+    typename std::enable_if<
+            std::is_integral<U>::value && std::is_unsigned<U>::value,
+            void
+    >::type
+#else
+    void
+#endif
+    static inline unsigned_to_decimal(U number, char *buffer) {
+        // Implementation from https://ideone.com/nrQfA8 by Alf P. Steinbach
+        // (see https://www.zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html#comment-1033931478)
+        if (number == 0) {
+            *buffer++ = '0';
+        } else {
+            char *p_first = buffer;
+            while (number != 0) {
+                *buffer++ = static_cast<char>('0' + number % 10);
+                number /= 10;
+            }
+            std::reverse(p_first, buffer);
+        }
+        *buffer = '\0';
+    }
 
     static const int ZLIB_BUF_SIZE = 128 * 1024;
 };

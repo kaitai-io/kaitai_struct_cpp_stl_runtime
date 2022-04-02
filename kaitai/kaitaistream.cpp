@@ -566,22 +566,6 @@ int kaitai::kstream::mod(int a, int b) {
     return r;
 }
 
-#include <stdio.h>
-std::string kaitai::kstream::to_string(int val) {
-    // if int is 32 bits, "-2147483648" is the longest string representation
-    //   => 11 chars + zero => 12 chars
-    // if int is 64 bits, "-9223372036854775808" is the longest
-    //   => 20 chars + zero => 21 chars
-    char buf[25];
-    int got_len = snprintf(buf, sizeof(buf), "%d", val);
-
-    // should never happen, but check nonetheless
-    if (got_len > sizeof(buf))
-        throw std::invalid_argument("to_string: integer is longer than string buffer");
-
-    return std::string(buf);
-}
-
 #include <algorithm>
 std::string kaitai::kstream::reverse(std::string val) {
     std::reverse(val.begin(), val.end());
