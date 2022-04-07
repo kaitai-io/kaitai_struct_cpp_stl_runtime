@@ -19,9 +19,6 @@ set (HEADERS
     kaitai/kaitaistream.h
     kaitai/kaitaistruct.h
     kaitai/exceptions.h
-    # required by public header kaitai/kaitaistream.h, so I guess it must be included as well
-    # (see https://stackoverflow.com/a/61152762)
-    kaitai/detail/make_unsigned.h
 )
 
 set (SOURCES

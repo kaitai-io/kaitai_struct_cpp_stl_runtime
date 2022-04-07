@@ -567,6 +567,22 @@ int kaitai::kstream::mod(int a, int b) {
 }
 
 #include <algorithm>
+void kaitai::kstream::unsigned_to_decimal(uint64_t number, char *buffer) {
+    // Implementation from https://ideone.com/nrQfA8 by Alf P. Steinbach
+    // (see https://www.zverovich.net/2013/09/07/integer-to-string-conversion-in-cplusplus.html#comment-1033931478)
+    if (number == 0) {
+        *buffer++ = '0';
+    } else {
+        char *p_first = buffer;
+        while (number != 0) {
+            *buffer++ = static_cast<char>('0' + number % 10);
+            number /= 10;
+        }
+        std::reverse(p_first, buffer);
+    }
+    *buffer = '\0';
+}
+
 std::string kaitai::kstream::reverse(std::string val) {
     std::reverse(val.begin(), val.end());
 
