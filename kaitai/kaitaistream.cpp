@@ -17,7 +17,15 @@
 #define bswap_16(x) _byteswap_ushort(x)
 #define bswap_32(x) _byteswap_ulong(x)
 #define bswap_64(x) _byteswap_uint64(x)
-#else // !__APPLE__ or !_MSC_VER
+#elif defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
+#include <sys/types.h>
+#include <sys/endian.h>
+#ifdef __OpenBSD__
+#define bswap_16 swap16
+#define bswap_32 swap32
+#define bswap_64 swap64
+#endif
+#else // !__APPLE__ or !_MSC_VER or !__OpenBSD__ or !__FreeBSD__ or !__NetBSD__ or !__DragonFly__
 #include <endian.h>
 #include <byteswap.h>
 #endif
