@@ -29,7 +29,7 @@ public:
 
     void SetCursor(unsigned long long pos)
     {
-        mCursor = 0;
+        mCursor = pos;
     }
 
     void AddCursor(unsigned long long pos)
