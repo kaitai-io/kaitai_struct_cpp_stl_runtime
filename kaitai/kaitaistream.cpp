@@ -26,13 +26,7 @@
 #include <vector>
 #include <stdexcept>
 
-kaitai::kstream::kstream(std::istream *io) {
-    m_io = io;
-    init();
-}
-
-kaitai::kstream::kstream(const std::string &data) : m_io_str(data) {
-    m_io = &m_io_str;
+kaitai::kstream::kstream(CDataReader reader) : m_reader(reader) {
     init();
 }
 
@@ -46,49 +40,31 @@ void kaitai::kstream::close() {
 }
 
 void kaitai::kstream::exceptions_enable() const {
-    m_io->exceptions(
+    /*m_io->exceptions(
         std::istream::eofbit |
         std::istream::failbit |
         std::istream::badbit
-    );
+    );*/
 }
 
 // ========================================================================
 // Stream positioning
 // ========================================================================
 
-bool kaitai::kstream::is_eof() const {
-    if (m_bits_left > 0) {
-        return false;
-    }
-    char t;
-    m_io->exceptions(std::istream::badbit);
-    m_io->get(t);
-    if (m_io->eof()) {
-        m_io->clear();
-        exceptions_enable();
-        return true;
-    } else {
-        m_io->unget();
-        exceptions_enable();
-        return false;
-    }
+bool kaitai::kstream::is_eof() {
+    return m_reader.IsEOF();
 }
 
 void kaitai::kstream::seek(uint64_t pos) {
-    m_io->seekg(pos);
+    m_reader.SetCursor(pos);
 }
 
 uint64_t kaitai::kstream::pos() {
-    return m_io->tellg();
+    return m_reader.GetCursor();
 }
 
 uint64_t kaitai::kstream::size() {
-    std::iostream::pos_type cur_pos = m_io->tellg();
-    m_io->seekg(0, std::ios::end);
-    std::iostream::pos_type len = m_io->tellg();
-    m_io->seekg(cur_pos);
-    return len;
+    return m_reader.GetSizeOfData();
 }
 
 // ========================================================================
@@ -101,7 +77,7 @@ uint64_t kaitai::kstream::size() {
 
 int8_t kaitai::kstream::read_s1() {
     char t;
-    m_io->get(t);
+    m_reader.Read(&t);
     return t;
 }
 
@@ -111,7 +87,7 @@ int8_t kaitai::kstream::read_s1() {
 
 int16_t kaitai::kstream::read_s2be() {
     int16_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 2);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     t = bswap_16(t);
 #endif
@@ -120,7 +96,7 @@ int16_t kaitai::kstream::read_s2be() {
 
 int32_t kaitai::kstream::read_s4be() {
     int32_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 4);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     t = bswap_32(t);
 #endif
@@ -129,7 +105,7 @@ int32_t kaitai::kstream::read_s4be() {
 
 int64_t kaitai::kstream::read_s8be() {
     int64_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 8);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     t = bswap_64(t);
 #endif
@@ -142,7 +118,7 @@ int64_t kaitai::kstream::read_s8be() {
 
 int16_t kaitai::kstream::read_s2le() {
     int16_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 2);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __BIG_ENDIAN
     t = bswap_16(t);
 #endif
@@ -151,7 +127,7 @@ int16_t kaitai::kstream::read_s2le() {
 
 int32_t kaitai::kstream::read_s4le() {
     int32_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 4);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __BIG_ENDIAN
     t = bswap_32(t);
 #endif
@@ -160,7 +136,7 @@ int32_t kaitai::kstream::read_s4le() {
 
 int64_t kaitai::kstream::read_s8le() {
     int64_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 8);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __BIG_ENDIAN
     t = bswap_64(t);
 #endif
@@ -173,7 +149,7 @@ int64_t kaitai::kstream::read_s8le() {
 
 uint8_t kaitai::kstream::read_u1() {
     char t;
-    m_io->get(t);
+    m_reader.Read(&t);
     return t;
 }
 
@@ -183,7 +159,7 @@ uint8_t kaitai::kstream::read_u1() {
 
 uint16_t kaitai::kstream::read_u2be() {
     uint16_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 2);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     t = bswap_16(t);
 #endif
@@ -192,7 +168,7 @@ uint16_t kaitai::kstream::read_u2be() {
 
 uint32_t kaitai::kstream::read_u4be() {
     uint32_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 4);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     t = bswap_32(t);
 #endif
@@ -201,7 +177,7 @@ uint32_t kaitai::kstream::read_u4be() {
 
 uint64_t kaitai::kstream::read_u8be() {
     uint64_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 8);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     t = bswap_64(t);
 #endif
@@ -214,7 +190,7 @@ uint64_t kaitai::kstream::read_u8be() {
 
 uint16_t kaitai::kstream::read_u2le() {
     uint16_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 2);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __BIG_ENDIAN
     t = bswap_16(t);
 #endif
@@ -223,7 +199,7 @@ uint16_t kaitai::kstream::read_u2le() {
 
 uint32_t kaitai::kstream::read_u4le() {
     uint32_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 4);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __BIG_ENDIAN
     t = bswap_32(t);
 #endif
@@ -232,7 +208,7 @@ uint32_t kaitai::kstream::read_u4le() {
 
 uint64_t kaitai::kstream::read_u8le() {
     uint64_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 8);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __BIG_ENDIAN
     t = bswap_64(t);
 #endif
@@ -249,7 +225,7 @@ uint64_t kaitai::kstream::read_u8le() {
 
 float kaitai::kstream::read_f4be() {
     uint32_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 4);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     t = bswap_32(t);
 #endif
@@ -258,7 +234,7 @@ float kaitai::kstream::read_f4be() {
 
 double kaitai::kstream::read_f8be() {
     uint64_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 8);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     t = bswap_64(t);
 #endif
@@ -271,7 +247,7 @@ double kaitai::kstream::read_f8be() {
 
 float kaitai::kstream::read_f4le() {
     uint32_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 4);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __BIG_ENDIAN
     t = bswap_32(t);
 #endif
@@ -280,7 +256,7 @@ float kaitai::kstream::read_f4le() {
 
 double kaitai::kstream::read_f8le() {
     uint64_t t;
-    m_io->read(reinterpret_cast<char *>(&t), 8);
+    m_reader.Read(&t);
 #if __BYTE_ORDER == __BIG_ENDIAN
     t = bswap_64(t);
 #endif
@@ -310,7 +286,7 @@ uint64_t kaitai::kstream::read_bits_int_be(int n) {
         if (bytes_needed > 8)
             throw std::runtime_error("read_bits_int_be: more than 8 bytes requested");
         uint8_t buf[8];
-        m_io->read(reinterpret_cast<char *>(buf), bytes_needed);
+        m_reader.ReadRawBuffer(reinterpret_cast<void *>(buf), bytes_needed);
         for (int i = 0; i < bytes_needed; i++) {
             res = res << 8 | buf[i];
         }
@@ -345,7 +321,7 @@ uint64_t kaitai::kstream::read_bits_int_le(int n) {
         if (bytes_needed > 8)
             throw std::runtime_error("read_bits_int_le: more than 8 bytes requested");
         uint8_t buf[8];
-        m_io->read(reinterpret_cast<char *>(buf), bytes_needed);
+        m_reader.ReadRawBuffer(reinterpret_cast<void *>(buf), bytes_needed);
         for (int i = 0; i < bytes_needed; i++) {
             res |= static_cast<uint64_t>(buf[i]) << (i * 8);
         }
@@ -387,16 +363,16 @@ std::string kaitai::kstream::read_bytes(std::streamsize len) {
     }
 
     if (len > 0) {
-        m_io->read(&result[0], len);
+        m_reader.ReadRawBuffer(&result[0], len);
     }
 
     return std::string(result.begin(), result.end());
 }
 
 std::string kaitai::kstream::read_bytes_full() {
-    std::iostream::pos_type p1 = m_io->tellg();
-    m_io->seekg(0, std::ios::end);
-    std::iostream::pos_type p2 = m_io->tellg();
+    std::iostream::pos_type p1 = m_reader.GetCursor();
+    m_reader.SetCursor(m_reader.GetSizeOfData());
+    std::iostream::pos_type p2 = m_reader.GetCursor();
     size_t len = p2 - p1;
 
     // Note: this requires a std::string to be backed with a
@@ -404,16 +380,32 @@ std::string kaitai::kstream::read_bytes_full() {
     // C++11 (C++98 and C++03 didn't have this requirement), but all
     // major implementations had contiguous buffers anyway.
     std::string result(len, ' ');
-    m_io->seekg(p1);
-    m_io->read(&result[0], len);
+    m_reader.SetCursor(p1);
+    m_reader.ReadRawBuffer(&result[0], len);
 
     return result;
 }
 
 std::string kaitai::kstream::read_bytes_term(char term, bool include, bool consume, bool eos_error) {
-    std::string result;
-    std::getline(*m_io, result, term);
-    if (m_io->eof()) {
+    std::string result = "";
+    //std::getline(*m_io, result, term);
+
+    while (m_reader.IsEOF() == false)
+    {
+        char currentChar = 0x00;
+
+        m_reader.Read(&currentChar);
+
+        if(currentChar == term)
+        {
+            break;
+        }
+
+        result += currentChar;
+    }
+    
+
+    if (m_reader.IsEOF()) {
         // encountered EOF
         if (eos_error) {
             throw std::runtime_error("read_bytes_term: encountered EOF");
@@ -423,7 +415,7 @@ std::string kaitai::kstream::read_bytes_term(char term, bool include, bool consu
         if (include)
             result.push_back(term);
         if (!consume)
-            m_io->unget();
+            m_reader.SubCursor(1);
     }
     return result;
 }

@@ -10,6 +10,8 @@
 #include <sys/types.h>
 #include <limits>
 
+#include "dataStream.h"
+
 namespace kaitai {
 
 /**
@@ -32,17 +34,11 @@ namespace kaitai {
 class kstream {
 public:
     /**
-     * Constructs new Kaitai Stream object, wrapping a given std::istream.
-     * \param io istream object to use for this Kaitai Stream
-     */
-    kstream(std::istream* io);
-
-    /**
      * Constructs new Kaitai Stream object, wrapping a given in-memory data
      * buffer.
-     * \param data data buffer to use for this Kaitai Stream
+     * \param dataReader data reader to use for this Kaitai Stream
      */
-    kstream(const std::string& data);
+    kstream(CDataReader dataReader);
 
     void close();
 
@@ -56,7 +52,7 @@ public:
      * at the end of the stream for this method to return true.
      * \return "true" if we are located at the end of the stream.
      */
-    bool is_eof() const;
+    bool is_eof();
 
     /**
      * Set stream pointer to designated position.
@@ -277,8 +273,7 @@ public:
     static uint8_t byte_array_max(const std::string val);
 
 private:
-    std::istream* m_io;
-    std::istringstream m_io_str;
+    CDataReader m_reader;
     int m_bits_left;
     uint64_t m_bits;
 
