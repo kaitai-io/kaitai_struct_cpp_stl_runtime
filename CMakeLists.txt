@@ -6,7 +6,7 @@ file(GLOB KaitaiBindingSrc
 )
 
 add_library(${PROJECT_NAME} STATIC ${KaitaiBindingSrc})
-add_library(lib::kaitai ALIAS ${PROJECT_NAME})
+add_library(kaitai::kaitai ALIAS ${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME}
 	PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/
