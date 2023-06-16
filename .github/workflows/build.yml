@@ -16,10 +16,15 @@ jobs:
           sudo apt-get install -y libgtest-dev
       - name: build
         run: .build/build
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: |
+            build
       - name: unittest
         run: .build/run-unittest
 
-  windows:
+  windows-msvc:
     runs-on: windows-latest
     # NB: see https://github.com/actions/runner-images/blob/main/images/win/Windows2022-Readme.md for what's available in this image
     steps:
@@ -29,6 +34,29 @@ jobs:
           C:\vcpkg\bootstrap-vcpkg.bat
           C:\vcpkg\vcpkg install gtest:x64-windows
       - name: build
-        run: .build\build.ps1 -GTestPath C:\vcpkg\installed\x64-windows
+        run: .build\build-msvc.ps1 -GTestPath C:\vcpkg\installed\x64-windows
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: |
+            build
+      - name: unittest
+        run: .build\run-unittest.ps1
+
+  windows-mingw64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: restore
+        run: |
+          C:\vcpkg\bootstrap-vcpkg.bat
+          C:\vcpkg\vcpkg install gtest:x64-mingw-dynamic
+      - name: build
+        run: .build\build-mingw.ps1 -GTestPath C:\vcpkg\installed\x64-mingw-dynamic
+      - uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: |
+            build
       - name: unittest
         run: .build\run-unittest.ps1

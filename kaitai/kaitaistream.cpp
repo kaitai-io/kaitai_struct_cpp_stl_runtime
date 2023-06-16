@@ -9,7 +9,7 @@
 #define __BYTE_ORDER    BYTE_ORDER
 #define __BIG_ENDIAN    BIG_ENDIAN
 #define __LITTLE_ENDIAN LITTLE_ENDIAN
-#elif defined(_MSC_VER) // !__APPLE__
+#elif defined(_MSC_VER) || defined(__MINGW32__)
 #include <stdlib.h>
 #define __LITTLE_ENDIAN     1234
 #define __BIG_ENDIAN        4321
@@ -17,7 +17,7 @@
 #define bswap_16(x) _byteswap_ushort(x)
 #define bswap_32(x) _byteswap_ulong(x)
 #define bswap_64(x) _byteswap_uint64(x)
-#elif defined(__QNX__) // __QNX__
+#elif defined(__QNX__)
 #include <sys/param.h>
 #include <gulliver.h>
 #define bswap_16(x) ENDIAN_RET16(x)
@@ -26,7 +26,7 @@
 #define __BYTE_ORDER    BYTE_ORDER
 #define __BIG_ENDIAN    BIG_ENDIAN
 #define __LITTLE_ENDIAN LITTLE_ENDIAN
-#else // !__APPLE__ or !_MSC_VER or !__QNX__
+#else // !__APPLE__ or !_MSC_VER or !__MINGW32__ or !__QNX__
 #include <endian.h>
 #include <byteswap.h>
 #endif
@@ -692,6 +692,10 @@ std::string kaitai::kstream::bytes_to_str(std::string src, std::string src_enc) 
 }
 #elif defined(KS_STR_ENCODING_NONE)
 std::string kaitai::kstream::bytes_to_str(std::string src, std::string src_enc) {
+    // Silence the compiler warning about src_enc being unused - https://stackoverflow.com/a/1486931
+    // Sure, it's being unused in this version of this function, but it is obviously used in other implementations
+    (void) src_enc;
+
     return src;
 }
 #else

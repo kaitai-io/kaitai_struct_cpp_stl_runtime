@@ -1,6 +1,6 @@
 <#
 .DESCRIPTION
-Builds Kaitai Struct C++ runtime library and unit tests
+Builds Kaitai Struct C++ runtime library and unit tests on Windows using MS Visual C++ (MSVC)
 
 Requires:
 - MSVC native tools installed and available in the command prompt
