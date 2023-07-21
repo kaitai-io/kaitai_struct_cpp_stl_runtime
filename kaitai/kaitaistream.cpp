@@ -698,7 +698,7 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
             } else if (errno == EILSEQ) {
                 throw illegal_seq_in_encoding("no info");
             } else {
-                throw bytes_to_str_error(std::to_string(errno));
+                throw bytes_to_str_error(to_string(errno));
             }
         } else {
             // conversion successful
