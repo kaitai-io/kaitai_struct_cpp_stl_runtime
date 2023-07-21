@@ -5,6 +5,7 @@
 #endif
 
 #include "kaitai/kaitaistream.h"
+#include "kaitai/exceptions.h"
 
 TEST(KaitaiStreamTest, to_string)
 {
@@ -232,6 +233,41 @@ TEST(KaitaiStreamTest, bytes_to_str_utf16be)
         "\xE2\x96\x91"  // U+2591 LIGHT SHADE
         "\xE2\x91\xB0"  // U+2470 CIRCLED NUMBER SEVENTEEN
     );
+}
+
+TEST(KaitaiStreamTest, bytes_to_str_big_dest)
+{
+    // Prepare a string in IBM437 that is reasonably big, fill it with U+2248 ALMOST EQUAL TO character,
+    // which is just 1 byte 0xFB in IBM437.
+    const int len = 10'000'000;
+    std::string src(len, '\xF7');
+
+    std::string res = kaitai::kstream::bytes_to_str(src, "IBM437");
+
+    // In UTF-8, result is expected to be 3x more: every U+2248 is rendered as 3 bytes "\xE2\x89\x88"
+    EXPECT_EQ(res.length(), len * 3);
+}
+
+TEST(KaitaiStreamTest, bytes_to_str_unknown_encoding)
+{
+    try {
+        std::string res = kaitai::kstream::bytes_to_str("abc", "invalid");
+        FAIL() << "Expected unknown_encoding exception";
+    } catch (const kaitai::unknown_encoding& e) {
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: unknown encoding: `invalid`"));
+    }
+}
+
+TEST(KaitaiStreamTest, bytes_to_str_invalid_seq)
+{
+    try {
+        std::string res = kaitai::kstream::bytes_to_str("\x93\x97", "GB2312");
+        FAIL() << "Expected illegal_seq_in_encoding exception";
+    } catch (const kaitai::illegal_seq_in_encoding& e) {
+#ifdef KS_STR_ENCODING_ICONV
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: no info"));
+#endif
+    }
 }
 #endif
 

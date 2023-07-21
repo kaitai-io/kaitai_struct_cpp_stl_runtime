@@ -1,4 +1,5 @@
 #include <kaitai/kaitaistream.h>
+#include <kaitai/exceptions.h>
 
 #if defined(__APPLE__)
 #include <machine/endian.h>
@@ -659,9 +660,9 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
 
     if (cd == (iconv_t)-1) {
         if (errno == EINVAL) {
-            throw std::runtime_error("bytes_to_str: invalid encoding pair conversion requested");
+            throw unknown_encoding(src_enc);
         } else {
-            throw std::runtime_error("bytes_to_str: error opening iconv");
+            throw bytes_to_str_error("error opening iconv");
         }
     }
 
@@ -694,8 +695,10 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
                 // of memory, thus our previous pointer "dst" will be invalid; re-point
                 // it using "dst_used".
                 dst_ptr = &dst[dst_used];
+            } else if (errno == EILSEQ) {
+                throw illegal_seq_in_encoding("no info");
             } else {
-                throw std::runtime_error("bytes_to_str: iconv error");
+                throw bytes_to_str_error(std::to_string(errno));
             }
         } else {
             // conversion successful
@@ -705,7 +708,7 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
     }
 
     if (iconv_close(cd) != 0) {
-        throw std::runtime_error("bytes_to_str: iconv close error");
+        throw bytes_to_str_error("iconv close error");
     }
 
     return dst;

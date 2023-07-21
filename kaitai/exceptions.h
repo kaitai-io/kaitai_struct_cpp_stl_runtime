@@ -20,6 +20,41 @@
 namespace kaitai {
 
 /**
+ * Common ancestor for all errors related to `bytes_to_str` operation. Also used
+ * to signal misc non-specific `bytes_to_str` failures.
+ */
+class bytes_to_str_error: public std::runtime_error {
+public:
+    bytes_to_str_error(const std::string what):
+        std::runtime_error(std::string("bytes_to_str error: ") + what) {}
+
+    virtual ~bytes_to_str_error() KS_NOEXCEPT {};
+};
+
+/**
+ * Exception to signal that `bytes_to_str` operation was requested to use some encoding
+ * that is not available in given runtime environment.
+ */
+class unknown_encoding: public bytes_to_str_error {
+public:
+    unknown_encoding(const std::string enc_name):
+        bytes_to_str_error(std::string("unknown encoding: `") + enc_name + std::string("`")) {}
+
+    virtual ~unknown_encoding() KS_NOEXCEPT {};
+};
+
+/**
+ * Exception to signal that `bytes_to_str` operation failed to decode given byte sequence.
+ */
+class illegal_seq_in_encoding: public bytes_to_str_error {
+public:
+    illegal_seq_in_encoding(const std::string what):
+        bytes_to_str_error("illegal sequence: " + what) {}
+
+    virtual ~illegal_seq_in_encoding() KS_NOEXCEPT {};
+};
+
+/**
  * Common ancestor for all error originating from Kaitai Struct usage.
  * Stores KSY source path, pointing to an element supposedly guilty of
  * an error.
