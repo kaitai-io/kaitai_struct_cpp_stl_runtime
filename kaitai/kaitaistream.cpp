@@ -783,7 +783,7 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
     // Step 1: convert encoding name to codepage number
     int codepage = encoding_to_win_codepage(src_enc);
     if (codepage == KAITAI_CP_UNSUPPORTED) {
-        throw std::unknown_encoding(src_enc);
+        throw unknown_encoding(src_enc);
     }
     return bytes_to_str(src, codepage);
 }
@@ -843,13 +843,13 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, int codepage) {
     // Calculate the length of the UTF-8 string
     int utf8_len = WideCharToMultiByte(CP_UTF8, 0, &utf16[0], utf16_len, 0, 0, 0, 0);
     if (utf8_len == 0) {
-        throw std::bytes_to_str_error("WideCharToMultiByte length calculation error");
+        throw bytes_to_str_error("WideCharToMultiByte length calculation error");
     }
 
     // Convert to UTF-8 string
     std::string utf8(utf8_len, '\0');
     if (WideCharToMultiByte(CP_UTF8, 0, &utf16[0], utf16_len, &utf8[0], utf8_len, 0, 0) == 0) {
-        throw std::bytes_to_str_error("WideCharToMultiByte conversion error");
+        throw bytes_to_str_error("WideCharToMultiByte conversion error");
     }
 
     return utf8;
