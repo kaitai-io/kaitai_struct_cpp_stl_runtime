@@ -239,7 +239,7 @@ TEST(KaitaiStreamTest, bytes_to_str_big_dest)
 {
     // Prepare a string in IBM437 that is reasonably big, fill it with U+2248 ALMOST EQUAL TO character,
     // which is just 1 byte 0xFB in IBM437.
-    const int len = 10'000'000;
+    const int len = 10000000;
     std::string src(len, '\xF7');
 
     std::string res = kaitai::kstream::bytes_to_str(src, "IBM437");
