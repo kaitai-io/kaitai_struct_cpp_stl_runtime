@@ -264,9 +264,7 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq)
         std::string res = kaitai::kstream::bytes_to_str("\x93\x97", "GB2312");
         FAIL() << "Expected illegal_seq_in_encoding exception";
     } catch (const kaitai::illegal_seq_in_encoding& e) {
-#ifdef KS_STR_ENCODING_ICONV
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: no info"));
-#endif
     }
 }
 #endif
