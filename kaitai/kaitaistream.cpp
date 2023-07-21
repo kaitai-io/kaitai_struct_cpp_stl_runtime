@@ -831,7 +831,7 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, int codepage) {
         if (MultiByteToWideChar(codepage, MB_ERR_INVALID_CHARS, src.c_str(), src_len, &utf16[0], utf16_len) == 0) {
             auto err = GetLastError();
             if (err == ERROR_NO_UNICODE_TRANSLATION) {
-                throw illegal_seq_in_encoding("no info")
+                throw illegal_seq_in_encoding("no info");
             } else {
                 throw bytes_to_str_error("MultiByteToWideChar conversion error");
             }
