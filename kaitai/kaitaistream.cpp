@@ -696,7 +696,9 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
                 // it using "dst_used".
                 dst_ptr = &dst[dst_used];
             } else if (errno == EILSEQ) {
-                throw illegal_seq_in_encoding("no info");
+                throw illegal_seq_in_encoding("EILSEQ");
+            } else if (errno == EINVAL) {
+                throw illegal_seq_in_encoding("EINVAL");
             } else {
                 throw bytes_to_str_error(to_string(errno));
             }
@@ -807,11 +809,21 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, int codepage) {
     switch (codepage) {
     case KAITAI_CP_UTF16LE:
         // If our source is already UTF-16LE, just copy it
+
+        if (src_len % 2 != 0) {
+            throw illegal_seq_in_encoding("incomplete");
+        }
+
         utf16_len = src_len / 2;
         utf16 = std::wstring((wchar_t*)src.c_str(), utf16_len);
         break;
     case KAITAI_CP_UTF16BE:
         // If our source is in UTF-16BE, convert it to UTF-16LE by swapping bytes
+
+        if (src_len % 2 != 0) {
+            throw illegal_seq_in_encoding("incomplete");
+        }
+
         utf16_len = src_len / 2;
 
         utf16 = std::wstring(utf16_len, L'\0');
@@ -831,7 +843,7 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, int codepage) {
         if (MultiByteToWideChar(codepage, MB_ERR_INVALID_CHARS, src.c_str(), src_len, &utf16[0], utf16_len) == 0) {
             auto err = GetLastError();
             if (err == ERROR_NO_UNICODE_TRANSLATION) {
-                throw illegal_seq_in_encoding("no info");
+                throw illegal_seq_in_encoding("MultiByteToWideChar");
             } else {
                 throw bytes_to_str_error("MultiByteToWideChar conversion error");
             }
@@ -848,8 +860,13 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, int codepage) {
 
     // Convert to UTF-8 string
     std::string utf8(utf8_len, '\0');
-    if (WideCharToMultiByte(CP_UTF8, 0, &utf16[0], utf16_len, &utf8[0], utf8_len, 0, 0) == 0) {
-        throw bytes_to_str_error("WideCharToMultiByte conversion error");
+    if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, &utf16[0], utf16_len, &utf8[0], utf8_len, 0, 0) == 0) {
+        auto err = GetLastError();
+        if (err == ERROR_NO_UNICODE_TRANSLATION) {
+            throw illegal_seq_in_encoding("WideCharToMultiByte");
+        } else {
+            throw bytes_to_str_error("WideCharToMultiByte conversion error");
+        }
     }
 
     return utf8;
