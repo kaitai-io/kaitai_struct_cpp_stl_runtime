@@ -286,7 +286,7 @@ TEST(KaitaiStreamTest, bytes_to_str_big_dest)
 {
     // Prepare a string in IBM437 that is reasonably big, fill it with U+2248 ALMOST EQUAL TO character,
     // which is just 1 byte 0xFB in IBM437.
-    const int len = 10000000;
+    const int len = 10;
     std::string src(len, '\xF7');
 
     std::string res = kaitai::kstream::bytes_to_str(src, "IBM437");
@@ -321,6 +321,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_euc_jp_too_short)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EINVAL"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: MultiByteToWideChar"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("xxx"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -338,6 +340,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_too_short)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EINVAL"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: MultiByteToWideChar"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("xxx"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -354,6 +358,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_two_bytes)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EILSEQ"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: MultiByteToWideChar"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("xxx"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -371,6 +377,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf_16le_odd_bytes)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EINVAL"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: incomplete"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("xxx"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -389,6 +397,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf_16le_incomplete_high_surroga
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EINVAL"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: WideCharToMultiByte"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("xxx"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif

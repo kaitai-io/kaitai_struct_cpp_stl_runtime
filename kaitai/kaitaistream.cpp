@@ -872,6 +872,48 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, int codepage) {
     return utf8;
 }
 
+#elif defined(KS_STR_ENCODING_ICU)
+#include <unicode/ucnv.h>
+#include <iostream>
+
+std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src_enc) {
+    // Start with a buffer length of double the source length.
+    size_t init_dst_len = src.length() * 2;
+    std::string dst(init_dst_len, ' ');
+
+    UErrorCode err = U_ZERO_ERROR;
+    int32_t dst_len = ucnv_convert(KS_STR_DEFAULT_ENCODING, src_enc, &dst[0], init_dst_len, src.c_str(), src.length(), &err);
+
+    if (err == U_BUFFER_OVERFLOW_ERROR) {
+        // We need a bigger buffer, but at least we know how much space exactly we need now
+        dst.resize(dst_len, ' ');
+
+        // Try again with the new buffer
+        err = U_ZERO_ERROR;
+        dst_len = ucnv_convert(KS_STR_DEFAULT_ENCODING, src_enc, &dst[0], dst_len, src.c_str(), src.length(), &err);
+    } else if (!U_FAILURE(err)) {
+        // Conversion succeed from the first try, shrink the buffer to fit
+        dst.resize(dst_len);
+    }
+
+    std::cout << "err = " << err << std::endl;
+    // Dump all bytes of result
+    for (int i = 0; i < dst_len; i++) {
+        std::cout << std::hex << (int)(uint8_t)dst[i] << " ";
+    }
+    std::cout << "\n";
+
+    if (U_FAILURE(err)) {
+        // Conversion failed
+        if (err == U_FILE_ACCESS_ERROR) {
+            throw unknown_encoding(src_enc);
+        } else {
+            throw bytes_to_str_error(u_errorName(err));
+        }
+    }
+
+    return dst;
+}
 #else
-#error Need to decide how to handle strings: please define one of: KS_STR_ENCODING_ICONV, KS_STR_ENCODING_WIN32API, KS_STR_ENCODING_NONE
+#error Need to decide how to handle strings: please define one of: KS_STR_ENCODING_ICONV, KS_STR_ENCODING_WIN32API, KS_STR_ENCODING_ICU, KS_STR_ENCODING_NONE
 #endif
