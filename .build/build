@@ -4,5 +4,5 @@ cd "$(dirname "$0")"/..
 
 mkdir -p build
 cd build
-cmake ..
+cmake -DBUILD_SHARED_LIBS=ON ..
 cmake --build .
