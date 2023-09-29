@@ -2,6 +2,8 @@ cmake_minimum_required (VERSION 3.11)
 project (kaitai_struct_cpp_stl_runtime CXX)
 enable_testing()
 
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+
 set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
 find_package(ZLIB)
