@@ -3,6 +3,7 @@ project (kaitai_struct_cpp_stl_runtime CXX)
 enable_testing()
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+option(BUILD_TESTS "Build tests" ON)
 
 set (CMAKE_INCLUDE_CURRENT_DIR ON)
 
@@ -46,4 +47,6 @@ install(TARGETS ${PROJECT_NAME}
 )
 
 # Add the tests
-add_subdirectory(tests)
+if(BUILD_TESTS)
+    add_subdirectory(tests)
+endif()
