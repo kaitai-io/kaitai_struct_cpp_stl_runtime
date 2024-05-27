@@ -99,11 +99,10 @@ jobs:
           release: "14.0"
           usesh: true
           prepare: |
-            pkg install -y curl
+            pkg install -y cmake
 
           run: |
-            pwd
-            ls -lah
+            echo '#### System information'
             whoami
             env
             freebsd-version
@@ -111,3 +110,9 @@ jobs:
             gcc --version
             clang++ --version
             pkg info
+
+            echo '#### Building'
+            .build/build -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
+
+            echo '#### Testing'
+            .build/run-unittest
