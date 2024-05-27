@@ -99,7 +99,7 @@ jobs:
           release: "14.0"
           usesh: true
           prepare: |
-            pkg install -y cmake
+            pkg install -y cmake googletest
 
           run: |
             echo '#### System information'
