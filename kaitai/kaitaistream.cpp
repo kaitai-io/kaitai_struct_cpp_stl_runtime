@@ -38,6 +38,9 @@
 #define bswap_16(x) bswap16(x)
 #define bswap_32(x) bswap32(x)
 #define bswap_64(x) bswap64(x)
+#define __BYTE_ORDER    BYTE_ORDER
+#define __BIG_ENDIAN    BIG_ENDIAN
+#define __LITTLE_ENDIAN LITTLE_ENDIAN
 #else // !__APPLE__ or !_MSC_VER or !__QNX__ or !BSD
 #include <endian.h>
 #include <byteswap.h>
