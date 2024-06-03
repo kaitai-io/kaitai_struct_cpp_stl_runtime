@@ -116,3 +116,29 @@ jobs:
 
             echo '#### Testing'
             .build/run-unittest
+  netbsd_10_0:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run in NetBSD
+        uses: vmactions/netbsd-vm@v1
+        with:
+          release: "10.0"
+          usesh: true
+          prepare: |
+            /usr/sbin/pkg_add cmake googletest
+
+          run: |
+            echo '#### System information'
+            whoami
+            env
+            c++ --version
+            gcc --version
+            clang++ --version
+            pkg info
+
+            echo '#### Building'
+            .build/build -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
+
+            echo '#### Testing'
+            .build/run-unittest
