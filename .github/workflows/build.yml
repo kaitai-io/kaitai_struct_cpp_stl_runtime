@@ -118,6 +118,9 @@ jobs:
             .build/run-unittest
   netbsd_10_0:
     runs-on: ubuntu-latest
+    # Doesn't use clang, has gcc:
+    # c++ (nb3 20231008) 10.5.0
+    # Copyright (C) 2020 Free Software Foundation, Inc.
     steps:
       - uses: actions/checkout@v4
       - name: Run in NetBSD
@@ -134,8 +137,6 @@ jobs:
             env
             c++ --version
             gcc --version
-            clang++ --version
-            pkg info
 
             echo '#### Building'
             .build/build -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
