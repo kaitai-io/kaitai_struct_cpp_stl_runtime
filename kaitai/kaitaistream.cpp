@@ -27,7 +27,10 @@
 #define __BYTE_ORDER    BYTE_ORDER
 #define __BIG_ENDIAN    BIG_ENDIAN
 #define __LITTLE_ENDIAN LITTLE_ENDIAN
-#elif defined(BSD)
+#else
+// At this point it's either Linux or BSD. Both have "sys/param.h", so it's safe to include
+#include <sys/param.h>
+#if defined(BSD)
 // Supposed to work on FreeBSD: https://man.freebsd.org/cgi/man.cgi?query=bswap16&manpath=FreeBSD+14.0-RELEASE
 // Supposed to work on NetBSD: https://man.netbsd.org/NetBSD-10.0/bswap16.3
 #include <sys/endian.h>
@@ -38,6 +41,7 @@
 #else // !__APPLE__ or !_MSC_VER or !__QNX__ or !BSD
 #include <endian.h>
 #include <byteswap.h>
+#endif
 #endif
 
 #include <cstring> // std::memcpy
