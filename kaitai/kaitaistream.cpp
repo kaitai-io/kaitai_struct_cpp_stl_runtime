@@ -27,7 +27,15 @@
 #define __BYTE_ORDER    BYTE_ORDER
 #define __BIG_ENDIAN    BIG_ENDIAN
 #define __LITTLE_ENDIAN LITTLE_ENDIAN
-#else // !__APPLE__ or !_MSC_VER or !__QNX__
+#elif defined(BSD)
+// Supposed to work on FreeBSD: https://man.freebsd.org/cgi/man.cgi?query=bswap16&manpath=FreeBSD+14.0-RELEASE
+// Supposed to work on NetBSD: https://man.netbsd.org/NetBSD-10.0/bswap16.3
+#include <sys/endian.h>
+#include <sys/types.h>
+#define bswap_16(x) bswap16(x)
+#define bswap_32(x) bswap32(x)
+#define bswap_64(x) bswap64(x)
+#else // !__APPLE__ or !_MSC_VER or !__QNX__ or !BSD
 #include <endian.h>
 #include <byteswap.h>
 #endif
