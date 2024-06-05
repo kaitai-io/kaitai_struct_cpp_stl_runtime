@@ -4,7 +4,10 @@
 #include <gtest/gtest.h>
 #endif
 
+// Necessary for proper detection of *BSD
+#if !defined(_MSC_VER)
 #include <sys/param.h>
+#endif
 
 #include "kaitai/kaitaistream.h"
 #include "kaitai/exceptions.h"
