@@ -4,6 +4,8 @@
 #include <gtest/gtest.h>
 #endif
 
+#include <sys/param.h>
+
 #include "kaitai/kaitaistream.h"
 #include "kaitai/exceptions.h"
 #include <sstream>
@@ -359,7 +361,6 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_euc_jp_too_short)
     }
 }
 
-
 TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_too_short)
 {
     try {
@@ -376,8 +377,12 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_too_short)
     }
 }
 
+#if !defined(__FreeBSD__) && !defined(__NetBSD__)
 TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_two_bytes)
 {
+    // 0xB0 0x30 is illegal sequence in GB2312: 0xB0 must be followed by [0xA1..0xFE].
+    // However, some iconv engines, namely CITRUS integrated with modern FreeBSD (10+) and NetBSD,
+    // are not considering this as error and thus not returning EILSEQ.
     try {
         std::string res = kaitai::kstream::bytes_to_str("\xb0\x30", "GB2312");
         FAIL() << "Expected illegal_seq_in_encoding exception";
@@ -391,6 +396,7 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_two_bytes)
 #endif
     }
 }
+#endif
 
 TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf_16le_odd_bytes)
 {
