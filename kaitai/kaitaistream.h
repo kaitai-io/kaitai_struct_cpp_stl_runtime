@@ -182,6 +182,8 @@ public:
     /**
      * Performs a XOR processing with given data, XORing every byte of input with a single
      * given value.
+     * WARNING: May return same byte array if key is zero.
+     * 
      * @param data data to process
      * @param key value to XOR with
      * @return processed data
@@ -192,6 +194,8 @@ public:
      * Performs a XOR processing with given data, XORing every byte of input with a key
      * array, repeating key array many times, if necessary (i.e. if data array is longer
      * than key array).
+     * WARNING: May return same byte array if key is zero.
+     * 
      * @param data data to process
      * @param key array of bytes to XOR with
      * @return processed data
@@ -200,13 +204,16 @@ public:
 
     /**
      * Performs a circular left rotation shift for a given buffer by a given amount of bits,
-     * using groups of 1 bytes each time. Right circular rotation should be performed
-     * using this procedure with corrected amount.
+     * using groups of some bytes each time. Right rotation can be performed by using
+     * negative amount.
+     * WARNING: May return same byte array if amount is zero (modulo-wise).
+     * 
      * @param data source data to process
      * @param amount number of bits to shift by
+     * @param groupSize number of bytes that make a group
      * @return copy of source array with requested shift applied
      */
-    static std::string process_rotate_left(std::string data, int amount);
+    static std::string process_rotate_left(std::string data, int amount, int groupSize = 1);
 
 #ifdef KS_ZLIB
     /**

@@ -514,10 +514,14 @@ std::string kaitai::kstream::ensure_fixed_contents(std::string expected) {
 }
 
 std::string kaitai::kstream::bytes_strip_right(std::string src, char pad_byte) {
-    std::size_t new_len = src.length();
+    std::size_t max_len = src.length();
+    std::size_t new_len = max_len;
 
     while (new_len > 0 && src[new_len - 1] == pad_byte)
         new_len--;
+
+    if (new_len == max_len)
+        return src;
 
     return src.substr(0, new_len);
 }
@@ -532,6 +536,9 @@ std::string kaitai::kstream::bytes_terminate(std::string src, char term, bool in
     if (include && new_len < max_len)
         new_len++;
 
+    if (new_len == max_len)
+        return src;
+
     return src.substr(0, new_len);
 }
 
@@ -540,41 +547,108 @@ std::string kaitai::kstream::bytes_terminate(std::string src, char term, bool in
 // ========================================================================
 
 std::string kaitai::kstream::process_xor_one(std::string data, uint8_t key) {
+    if (key == 0)
+        return data;
+
     size_t len = data.length();
     std::string result(len, ' ');
 
-    for (size_t i = 0; i < len; i++)
+    for (size_t i = 0; i < len; i++) {
         result[i] = data[i] ^ key;
+    }
 
     return result;
 }
 
 std::string kaitai::kstream::process_xor_many(std::string data, std::string key) {
     size_t len = data.length();
-    size_t kl = key.length();
+    size_t keylen = key.length();
+    if (keylen == 1)
+        return process_xor_one(data, key[0]);
+
     std::string result(len, ' ');
 
-    size_t ki = 0;
+    size_t k = 0;
     for (size_t i = 0; i < len; i++) {
-        result[i] = data[i] ^ key[ki];
-        ki++;
-        if (ki >= kl)
-            ki = 0;
+        result[i] = data[i] ^ key[k];
+        k++;
+        if (k == keylen)
+            k = 0;
     }
 
     return result;
 }
 
-std::string kaitai::kstream::process_rotate_left(std::string data, int amount) {
+uint8_t precomputedSingleRotations[8][256];
+
+// NOTE: static block of code, https://stackoverflow.com/a/34321324/2375119
+computeSingleRotations {
+    for (int amount = 1; amount < 8; amount++) {
+        int anti_amount = 8 - amount;
+        for (uint8_t i = 0; i < 256; i++) {
+            precomputedSingleRotations[amount][i] = (uint8_t)((i << amount) | (i >> anti_amount));
+        }
+    }
+}
+
+std::string kaitai::kstream::process_rotate_left(std::string data, int amount, int groupSize = 1) {
+    if (groupSize < 1)
+        throw std::runtime_error("process_rotate_left: groupSize must be at least 1");
+
+    amount = mod(amount, groupSize * 8);
+    if (amount == 0)
+        return data;
+
+    int amount_bytes = amount / 8;
     size_t len = data.length();
     std::string result(len, ' ');
 
-    for (size_t i = 0; i < len; i++) {
-        uint8_t bits = data[i];
-        result[i] = (bits << amount) | (bits >> (8 - amount));
+    if (groupSize == 1) {
+        uint8_t *translate = &precomputedSingleRotations[amount][0];
+
+        for (size_t i = 0; i < len; i++) {
+            result[i] = translate[data[i]];
+        }
+
+        return result;
     }
 
-    return result;
+    if (len % groupSize != 0)
+        throw std::runtime_error("process_rotate_left: data length must be a multiple of group size");
+
+    if (amount % 8 == 0) {
+        size_t indices[groupSize];
+        for (size_t i = 0; i < groupSize; i++) {
+            indices[i] = (size_t)((i + amount_bytes) % groupSize);
+        }
+
+        for (size_t i = 0; i < len; i += groupSize) {
+            for (size_t k = 0; k < groupSize; k++) {
+                result[i+k] = data[i + indices[k]];
+            }
+        }
+
+        return result;
+    }
+
+    {
+        int amount1 = amount % 8;
+        int amount2 = 8 - amount1;
+        size_t indices1[groupSize];
+        size_t indices2[groupSize];
+        for (size_t i = 0; i < groupSize; i++) {
+            indices1[i] = (size_t)((i +     amount_bytes) % groupSize);
+            indices2[i] = (size_t)((i + 1 + amount_bytes) % groupSize);
+        }
+
+        for (size_t i = 0; i < len; i += groupSize) {
+            for (size_t k = 0; k < groupSize; k++) {
+                result[i+k] = (uint8_t)((data[i + indices1[k]] << amount1) | (data[i + indices2[k]] >> amount2));
+            }
+        }
+
+        return result;
+    }
 }
 
 #ifdef KS_ZLIB
