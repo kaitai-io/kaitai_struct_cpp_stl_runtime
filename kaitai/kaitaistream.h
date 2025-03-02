@@ -12,13 +12,9 @@
 #include <stdint.h> // int8_t, int16_t, int32_t, int64_t, uint8_t, uint16_t, uint32_t, uint64_t
 
 #include <ios> // std::streamsize, forward declaration of std::istream  // IWYU pragma: keep
-#include <limits> // std::numeric_limits
+#include <cstddef> // std::size_t
 #include <sstream> // std::istringstream  // IWYU pragma: keep
 #include <string> // std::string
-
-#ifdef KAITAI_STREAM_H_CPP11_SUPPORT
-#include <type_traits> // std::enable_if, std::is_integral
-#endif
 
 namespace kaitai {
 
@@ -234,67 +230,45 @@ public:
 
     /**
      * Converts given integer `val` to a decimal string representation.
-     * Should be used in place of std::to_string() (which is available only
+     * Should be used in place of `std::to_string(int)` (which is available only
      * since C++11) in older C++ implementations.
      */
-    template<typename I>
-#ifdef KAITAI_STREAM_H_CPP11_SUPPORT
-    // https://stackoverflow.com/a/27913885
-    typename std::enable_if<
-            std::is_integral<I>::value &&
-            // check if we don't have something too large like GCC's `__int128_t`
-            std::numeric_limits<I>::max() >= 0 &&
-            std::numeric_limits<I>::max() <= std::numeric_limits<uint64_t>::max(),
-            std::string
-    >::type
-#else
-    std::string
-#endif
-    static to_string(I val) {
-        // in theory, `digits10 + 3` would be enough (minus sign + leading digit
-        // + null terminator), but let's add a little more to be safe
-        char buf[std::numeric_limits<I>::digits10 + 5];
-        if (val < 0) {
-            buf[0] = '-';
+    static std::string to_string(int val);
 
-            // NB: `val` is negative and we need to get its absolute value (i.e. minus `val`). However, since
-            // `int64_t` uses two's complement representation, its range is `[-2**63, 2**63 - 1] =
-            // [-0x8000_0000_0000_0000, 0x7fff_ffff_ffff_ffff]` (both ends inclusive) and thus the naive
-            // `-val` operation will overflow for `val = std::numeric_limits<int64_t>::min() =
-            // -0x8000_0000_0000_0000` (because the result of `-val` is mathematically
-            // `-(-0x8000_0000_0000_0000) = 0x8000_0000_0000_0000`, but the `int64_t` type can represent at
-            // most `0x7fff_ffff_ffff_ffff`). And signed integer overflow is undefined behavior in C++.
-            //
-            // To avoid undefined behavior for `val = -0x8000_0000_0000_0000 = -2**63`, we do the following
-            // steps for all negative `val`s:
-            //
-            // 1. Convert the signed (and negative) `val` to an unsigned `uint64_t` type. This is a
-            //    well-defined operation in C++: the resulting `uint64_t` value will be `val mod 2**64` (`mod`
-            //    is modulo). The maximum `val` we can have here is `-1` (because `val < 0`), a theoretical
-            //    minimum we are able to support would be `-2**64 + 1 = -0xffff_ffff_ffff_ffff` (even though
-            //    in practice the widest standard type is `int64_t` with the minimum of `-2**63`):
-            //
-            //    * `static_cast<uint64_t>(-1) = -1 mod 2**64 = 2**64 + (-1) = 0xffff_ffff_ffff_ffff = 2**64 - 1`
-            //    * `static_cast<uint64_t>(-2**64 + 1) = (-2**64 + 1) mod 2**64 = 2**64 + (-2**64 + 1) = 1`
-            //
-            // 2. Subtract `static_cast<uint64_t>(val)` from `2**64 - 1 = 0xffff_ffff_ffff_ffff`. Since
-            //    `static_cast<uint64_t>(val)` is in range `[1, 2**64 - 1]` (see step 1), the result of this
-            //    subtraction will be mathematically in range `[0, (2**64 - 1) - 1] = [0, 2**64 - 2]`. So the
-            //    mathematical result cannot be negative, hence this unsigned integer subtraction can never
-            //    wrap around (which wouldn't be a good thing to rely upon because it confuses programmers and
-            //    code analysis tools).
-            //
-            // 3. Since we did mathematically `(2**64 - 1) - (2**64 + val) = -val - 1` so far (and we wanted
-            //    to do `-val`), we add `1` to correct that. From step 2 we know that the result of `-val - 1`
-            //    is in range `[0, 2**64 - 2]`, so adding `1` will not wrap (at most we could get `2**64 - 1 =
-            //    0xffff_ffff_ffff_ffff`, which is still in the valid range of `uint64_t`).
+    /**
+     * Converts given integer `val` to a decimal string representation.
+     * Should be used in place of `std::to_string(long)` (which is available only
+     * since C++11) in older C++ implementations.
+     */
+    static std::string to_string(long val);
 
-            unsigned_to_decimal((std::numeric_limits<uint64_t>::max() - static_cast<uint64_t>(val)) + 1, &buf[1]);
-        } else {
-            unsigned_to_decimal(val, buf);
-        }
-        return std::string(buf);
-    }
+    /**
+     * Converts given integer `val` to a decimal string representation.
+     * Should be used in place of `std::to_string(long long)` (which is available only
+     * since C++11) in older C++ implementations.
+     */
+    static std::string to_string(long long val);
+
+    /**
+     * Converts given integer `val` to a decimal string representation.
+     * Should be used in place of `std::to_string(unsigned)` (which is available only
+     * since C++11) in older C++ implementations.
+     */
+    static std::string to_string(unsigned val);
+
+    /**
+     * Converts given integer `val` to a decimal string representation.
+     * Should be used in place of `std::to_string(unsigned long)` (which is available only
+     * since C++11) in older C++ implementations.
+     */
+    static std::string to_string(unsigned long val);
+
+    /**
+     * Converts given integer `val` to a decimal string representation.
+     * Should be used in place of `std::to_string(unsigned long long)` (which is available only
+     * since C++11) in older C++ implementations.
+     */
+    static std::string to_string(unsigned long long val);
 
     /**
      * Converts string `str` to an integer value. Throws an exception if the
@@ -347,7 +321,9 @@ private:
     void init();
     void exceptions_enable() const;
 
-    static void unsigned_to_decimal(uint64_t number, char *buffer);
+    static void unsigned_to_decimal(uint64_t number, char *buf, std::size_t &buf_contents_start);
+    static std::string to_string_signed(int64_t val);
+    static std::string to_string_unsigned(uint64_t val);
 
 #ifdef KS_STR_ENCODING_WIN32API
     enum {

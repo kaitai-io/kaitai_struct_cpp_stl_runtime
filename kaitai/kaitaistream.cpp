@@ -791,20 +791,96 @@ int kaitai::kstream::mod(int a, int b) {
     return r;
 }
 
-void kaitai::kstream::unsigned_to_decimal(uint64_t number, char *buffer) {
-    // Implementation from https://ideone.com/nrQfA8 by Alf P. Steinbach
+void kaitai::kstream::unsigned_to_decimal(uint64_t number, char *buf, std::size_t &buf_contents_start) {
+    // Implementation inspired by https://ideone.com/nrQfA8 by Alf P. Steinbach
     // (see https://vitaut.net/posts/2013/integer-to-string-conversion-in-cplusplus/)
-    if (number == 0) {
-        *buffer++ = '0';
+    do {
+        buf[--buf_contents_start] = static_cast<char>('0' + (number % 10));
+        number /= 10;
+    } while (number != 0);
+}
+
+std::string kaitai::kstream::to_string_signed(int64_t val) {
+    // `digits10 + 2` because of minus sign + leading digit (NB: null terminator is not used)
+    char buf[std::numeric_limits<int64_t>::digits10 + 2];
+    std::size_t buf_contents_start = sizeof(buf);
+    if (val < 0) {
+        // NB: `val` is negative and we need to get its absolute value (i.e. minus `val`). However, since
+        // `int64_t` uses two's complement representation, its range is `[-2**63, 2**63 - 1] =
+        // [-0x8000_0000_0000_0000, 0x7fff_ffff_ffff_ffff]` (both ends inclusive) and thus the naive
+        // `-val` operation will overflow for `val = std::numeric_limits<int64_t>::min() =
+        // -0x8000_0000_0000_0000` (because the result of `-val` is mathematically
+        // `-(-0x8000_0000_0000_0000) = 0x8000_0000_0000_0000`, but the `int64_t` type can represent at
+        // most `0x7fff_ffff_ffff_ffff`). And signed integer overflow is undefined behavior in C++.
+        //
+        // To avoid undefined behavior for `val = -0x8000_0000_0000_0000 = -2**63`, we do the following
+        // steps for all negative `val`s:
+        //
+        // 1. Convert the signed (and negative) `val` to an unsigned `uint64_t` type. This is a
+        //    well-defined operation in C++: the resulting `uint64_t` value will be `val mod 2**64` (`mod`
+        //    is modulo). The maximum `val` we can have here is `-1` (because `val < 0`), a theoretical
+        //    minimum we are able to support would be `-2**64 + 1 = -0xffff_ffff_ffff_ffff` (even though
+        //    in practice the widest standard type is `int64_t` with the minimum of `-2**63`):
+        //
+        //    * `static_cast<uint64_t>(-1) = -1 mod 2**64 = 2**64 + (-1) = 0xffff_ffff_ffff_ffff = 2**64 - 1`
+        //    * `static_cast<uint64_t>(-2**64 + 1) = (-2**64 + 1) mod 2**64 = 2**64 + (-2**64 + 1) = 1`
+        //
+        // 2. Subtract `static_cast<uint64_t>(val)` from `2**64 - 1 = 0xffff_ffff_ffff_ffff`. Since
+        //    `static_cast<uint64_t>(val)` is in range `[1, 2**64 - 1]` (see step 1), the result of this
+        //    subtraction will be mathematically in range `[0, (2**64 - 1) - 1] = [0, 2**64 - 2]`. So the
+        //    mathematical result cannot be negative, hence this unsigned integer subtraction can never
+        //    wrap around (which wouldn't be a good thing to rely upon because it confuses programmers and
+        //    code analysis tools).
+        //
+        // 3. Since we did mathematically `(2**64 - 1) - (2**64 + val) = -val - 1` so far (and we wanted
+        //    to do `-val`), we add `1` to correct that. From step 2 we know that the result of `-val - 1`
+        //    is in range `[0, 2**64 - 2]`, so adding `1` will not wrap (at most we could get `2**64 - 1 =
+        //    0xffff_ffff_ffff_ffff`, which is still in the valid range of `uint64_t`).
+        unsigned_to_decimal((std::numeric_limits<uint64_t>::max() - static_cast<uint64_t>(val)) + 1, buf, buf_contents_start);
+
+        buf[--buf_contents_start] = '-';
     } else {
-        char *p_first = buffer;
-        while (number != 0) {
-            *buffer++ = static_cast<char>('0' + number % 10);
-            number /= 10;
-        }
-        std::reverse(p_first, buffer);
+        unsigned_to_decimal(static_cast<uint64_t>(val), buf, buf_contents_start);
     }
-    *buffer = '\0';
+    return std::string(&buf[buf_contents_start], sizeof(buf) - buf_contents_start);
+}
+
+std::string kaitai::kstream::to_string_unsigned(uint64_t val) {
+    // `digits10 + 1` because of leading digit (NB: null terminator is not used)
+    char buf[std::numeric_limits<uint64_t>::digits10 + 1];
+    std::size_t buf_contents_start = sizeof(buf);
+    unsigned_to_decimal(val, buf, buf_contents_start);
+    return std::string(&buf[buf_contents_start], sizeof(buf) - buf_contents_start);
+}
+
+// NB: the following 6 overloads are exactly the ones that
+// [`std::to_string`](https://en.cppreference.com/w/cpp/string/basic_string/to_string) has.
+// Testing has shown that they are all necessary: if you remove any of them, you will get
+// something like `error: call to 'to_string' is ambiguous` when trying to call `to_string`
+// with the integer type for which you removed the overload.
+
+std::string kaitai::kstream::to_string(int val) {
+    return to_string_signed(val);
+}
+
+std::string kaitai::kstream::to_string(long val) {
+    return to_string_signed(val);
+}
+
+std::string kaitai::kstream::to_string(long long val) {
+    return to_string_signed(val);
+}
+
+std::string kaitai::kstream::to_string(unsigned val) {
+    return to_string_unsigned(val);
+}
+
+std::string kaitai::kstream::to_string(unsigned long val) {
+    return to_string_unsigned(val);
+}
+
+std::string kaitai::kstream::to_string(unsigned long long val) {
+    return to_string_unsigned(val);
 }
 
 int64_t kaitai::kstream::string_to_int(const std::string& str, int base) {
