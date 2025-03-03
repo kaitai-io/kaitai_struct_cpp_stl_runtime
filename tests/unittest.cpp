@@ -1,7 +1,12 @@
 #ifdef GTEST_NANO
 #include "tests/gtest-nano.h"
 #else
-#include "gtest/gtest.h"
+// These IWYU pragmas are needed for versions of GoogleTest older than 1.12,
+// see https://github.com/kaitai-io/kaitai_struct_cpp_stl_runtime/pull/72#issuecomment-2093287161
+#include "gtest/gtest.h" // IWYU pragma: keep
+// IWYU pragma: no_include <gtest/gtest-message.h>
+// IWYU pragma: no_include <gtest/gtest-test-part.h>
+// IWYU pragma: no_include "gtest/gtest_pred_impl.h"
 #endif
 
 #include "kaitai/kaitaistream.h"
@@ -66,42 +71,104 @@ TEST(KaitaiStreamTest, to_string)
     EXPECT_EQ(kaitai::kstream::to_string(-123), "-123");
 }
 
-TEST(KaitaiStreamTest, to_string_uint8)
+// Since `kstream::to_string` must have several overloads (just like
+// [`std::to_string`](https://en.cppreference.com/w/cpp/string/basic_string/to_string)) to
+// cover all [standard integer
+// types](https://en.cppreference.com/w/cpp/language/types#Properties) while avoiding
+// templates, it's a good idea to test whether it actually works with each standard
+// integer type. If even just one of the 6 required overloads is missing or not working,
+// these tests should be able to detect it.
+//
+// We test the standard integer types (keywords), not [fixed width integer
+// types](https://en.cppreference.com/w/cpp/header/cstdint) (like `int32_t`), because then
+// we could potentially have a blind spot: `int32_t` tends to be almost universally
+// equivalent to `int`, but `int64_t` is either `long` (typically on 64-bit Linux) or
+// `long long` (typically on 64-bit Windows) but not both. So I believe that using
+// standard integer types gives us better coverage.
+
+TEST(KaitaiStreamTest, to_string_unsigned_char)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint8_t>::min()), "0");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint8_t>::max()), "255");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned char>::min()), "0");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned char>::max()), "255");
 }
 
-TEST(KaitaiStreamTest, to_string_int8)
+TEST(KaitaiStreamTest, to_string_signed_char)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int8_t>::min()), "-128");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int8_t>::max()), "127");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<signed char>::min()), "-128");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<signed char>::max()), "127");
 }
 
-TEST(KaitaiStreamTest, to_string_uint16)
+TEST(KaitaiStreamTest, to_string_unsigned_short)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint16_t>::min()), "0");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint16_t>::max()), "65535");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned short>::min()), "0");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned short>::max()), "65535");
 }
 
-TEST(KaitaiStreamTest, to_string_int16)
+TEST(KaitaiStreamTest, to_string_short)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int16_t>::min()), "-32768");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int16_t>::max()), "32767");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<short>::min()), "-32768");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<short>::max()), "32767");
 }
 
-TEST(KaitaiStreamTest, to_string_uint32)
+TEST(KaitaiStreamTest, to_string_unsigned)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint32_t>::min()), "0");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint32_t>::max()), "4294967295");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned>::min()), "0");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned>::max()), "4294967295");
 }
 
-TEST(KaitaiStreamTest, to_string_int32)
+TEST(KaitaiStreamTest, to_string_int)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int32_t>::min()), "-2147483648");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int32_t>::max()), "2147483647");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int>::min()), "-2147483648");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int>::max()), "2147483647");
 }
 
+#ifdef _MSC_VER
+#pragma warning(push)
+// Disable `warning C4127: conditional expression is constant`
+// (see https://learn.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4127?view=msvc-170)
+#pragma warning(disable: 4127)
+#endif
+
+TEST(KaitaiStreamTest, to_string_unsigned_long)
+{
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long>::min()), "0");
+    if (sizeof(unsigned long) == 4) {
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long>::max()), "4294967295");
+    } else {
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long>::max()), "18446744073709551615");
+    }
+}
+
+TEST(KaitaiStreamTest, to_string_long)
+{
+    if (sizeof(long) == 4) {
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long>::min()), "-2147483648");
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long>::max()), "2147483647");
+    } else {
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long>::min()), "-9223372036854775808");
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long>::max()), "9223372036854775807");
+    }
+}
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+// The `long long` type is only available since C++11, so we use it only in C++11 mode.
+#ifdef KAITAI_STREAM_H_CPP11_SUPPORT
+TEST(KaitaiStreamTest, to_string_unsigned_long_long)
+{
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long long>::min()), "0");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long long>::max()), "18446744073709551615");
+}
+
+TEST(KaitaiStreamTest, to_string_long_long)
+{
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long long>::min()), "-9223372036854775808");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long long>::max()), "9223372036854775807");
+}
+#else
+// Make sure we still support 64-bit integers.
 TEST(KaitaiStreamTest, to_string_uint64)
 {
     EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint64_t>::min()), "0");
@@ -113,6 +180,7 @@ TEST(KaitaiStreamTest, to_string_int64)
     EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int64_t>::min()), "-9223372036854775808");
     EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int64_t>::max()), "9223372036854775807");
 }
+#endif
 
 TEST(KaitaiStreamTest, string_to_int)
 {

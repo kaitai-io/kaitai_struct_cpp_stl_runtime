@@ -19,7 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install GoogleTest
-        run: .build/install-gtest
+        env:
+          CPP_STANDARD: ${{ matrix.cpp-standard }}
+        run: .build/install-gtest "$CPP_STANDARD"
       - name: Update package lists
         run: sudo apt-get update
       - name: Install packages
@@ -123,7 +125,7 @@ jobs:
             pkg info
 
             echo '#### Installing GoogleTest'
-            .build/install-gtest
+            .build/install-gtest 11
 
             echo '#### Building'
             .build/build -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
