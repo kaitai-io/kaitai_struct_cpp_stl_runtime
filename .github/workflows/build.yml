@@ -146,9 +146,9 @@ jobs:
             whoami
             env
             freebsd-version
-            c++ --version
-            gcc --version
-            clang++ --version
+            c++ --version || :
+            gcc --version || :
+            clang++ --version || :
             pkg info
 
             echo '#### Installing GoogleTest'
