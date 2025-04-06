@@ -1203,7 +1203,7 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, int codepage) {
 
 std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src_enc) {
     UErrorCode err = U_ZERO_ERROR;
-    
+
     // Open the source converter
     UConverter* conv = ucnv_open(src_enc, &err);
     if (U_FAILURE(err)) {
@@ -1222,12 +1222,13 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
 
     // Configure source converter to stop on illegal sequences
     err = U_ZERO_ERROR;
-    ucnv_setToUCallBack(conv,
-                       UCNV_TO_U_CALLBACK_STOP,
-                       NULL,
-                       NULL,
-                       NULL,
-                       &err);
+    ucnv_setToUCallBack(
+        conv,
+        UCNV_TO_U_CALLBACK_STOP,
+        nullptr,
+        nullptr,
+        nullptr,
+        &err);
     if (U_FAILURE(err)) {
         ucnv_close(conv);
         ucnv_close(utf8Conv);
@@ -1240,12 +1241,13 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
 
     // Convert from source encoding to UTF-16
     err = U_ZERO_ERROR;
-    int32_t uniLength = ucnv_toUChars(conv,
-                                    uniStr,
-                                    uniStrCapacity,
-                                    src.c_str(),
-                                    src.length(),
-                                    &err);
+    int32_t uniLength = ucnv_toUChars(
+        conv,
+        uniStr,
+        uniStrCapacity,
+        src.c_str(),
+        src.length(),
+        &err);
     if (U_FAILURE(err)) {
         delete[] uniStr;
         ucnv_close(conv);
@@ -1255,12 +1257,13 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
 
     // Configure target converter to stop on illegal sequences
     err = U_ZERO_ERROR;
-    ucnv_setFromUCallBack(utf8Conv,
-                         UCNV_FROM_U_CALLBACK_STOP,
-                         NULL,
-                         NULL,
-                         NULL,
-                         &err);
+    ucnv_setFromUCallBack(
+        utf8Conv,
+        UCNV_FROM_U_CALLBACK_STOP,
+        nullptr,
+        nullptr,
+        nullptr,
+        &err);
     if (U_FAILURE(err)) {
         delete[] uniStr;
         ucnv_close(conv);
@@ -1274,12 +1277,13 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src
 
     // Convert from UTF-16 to UTF-8
     err = U_ZERO_ERROR;
-    int32_t outputLength = ucnv_fromUChars(utf8Conv,
-                                        dst,
-                                        dstCapacity,
-                                        uniStr,
-                                        uniLength,
-                                        &err);
+    int32_t outputLength = ucnv_fromUChars(
+        utf8Conv,
+        dst,
+        dstCapacity,
+        uniStr,
+        uniLength,
+        &err);
     if (U_FAILURE(err)) {
         delete[] uniStr;
         delete[] dst;
