@@ -19,6 +19,10 @@ jobs:
         encoding:
           - ICONV
           - ICU
+        exclude:
+          # Exclude ICU on C++98, as modern ICU library requires at least C++11
+          - cpp-standard: '98'
+            encoding: ICU
     steps:
       - uses: actions/checkout@v4
       - name: Install GoogleTest
@@ -30,8 +34,7 @@ jobs:
       - name: Install packages
         run: sudo apt-get install -y iwyu valgrind
       - name: Install ICU
-        run: |
-          sudo apt-get install -y libicu-dev
+        run: sudo apt-get install -y libicu-dev
         if: matrix.encoding == 'ICU'
       - name: Build
         env:
