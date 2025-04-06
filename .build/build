@@ -4,5 +4,6 @@ cd "$(dirname "$0")"/..
 
 mkdir -p build
 cd build
-cmake -DSTRING_ENCODING_TYPE="$ENCODING_TYPE" ..
+export VERBOSE=1
+cmake .. ${@:+"$@"}
 cmake --build .

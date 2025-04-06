@@ -8,29 +8,45 @@ Requires:
 - GTest installed, path passed in `-GTestPath`
 #>
 
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding=$false)]
 param (
     [Parameter(Mandatory=$true)]
     [string] $GTestPath,
+
     [Parameter(Mandatory=$false)]
-    [string] $EncodingType = "WIN32API"
+    [string] $EncodingType = "WIN32API",
+
+    [Parameter(ValueFromRemainingArguments=$true)]
+    [string[]] $ExtraArgs
 )
 
 # Standard boilerplate
 Set-StrictMode -Version Latest
-$ErrorActionPreference = "Stop"
-$PSDefaultParameterValues['*:ErrorAction']='Stop'
+$ErrorActionPreference = 'Stop'
+$PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
 
 # Go to repo root
 $repoRoot = (Resolve-Path "$PSScriptRoot\..").Path
 Push-Location $repoRoot
 
-$null = New-Item build -ItemType Directory -Force
-cd build
+try {
+    $null = New-Item -Path build -ItemType Directory -Force
+    cd build
 
-cmake -DCMAKE_PREFIX_PATH="$GTestPath" -DSTRING_ENCODING_TYPE="$EncodingType" ..
-cmake --build . --config Debug
-cp $GTestPath\debug\bin\*.dll tests\Debug
-cp Debug\kaitai_struct_cpp_stl_runtime.dll tests\Debug
+    $env:VERBOSE = '1'
 
-Pop-Location
+    cmake -DCMAKE_PREFIX_PATH="$GTestPath" -DSTRING_ENCODING_TYPE="$EncodingType" .. @ExtraArgs
+    if ($LastExitCode -ne 0) {
+        throw "'cmake' exited with code $LastExitCode"
+    }
+
+    cmake --build . --config Debug
+    if ($LastExitCode -ne 0) {
+        throw "'cmake --build' exited with code $LastExitCode"
+    }
+
+    cp $GTestPath\debug\bin\*.dll tests\Debug
+    cp Debug\kaitai_struct_cpp_stl_runtime.dll tests\Debug
+} finally {
+    Pop-Location
+}

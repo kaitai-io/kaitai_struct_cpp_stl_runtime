@@ -8,26 +8,72 @@ on:
 
 jobs:
   linux:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
+      fail-fast: false
       matrix:
+        cpp-standard:
+          - '98'
+          - '11'
+          - '20'
         encoding:
           - ICONV
           - ICU
-    env:
-      ENCODING_TYPE: ${{matrix.encoding}}
     steps:
-      - uses: actions/checkout@v3
-      - name: restore
-        run: |
-          sudo apt-get install -y libgtest-dev
-      - name: restore ICU
+      - uses: actions/checkout@v4
+      - name: Install GoogleTest
+        env:
+          CPP_STANDARD: ${{ matrix.cpp-standard }}
+        run: .build/install-gtest "$CPP_STANDARD"
+      - name: Update package lists
+        run: sudo apt-get update
+      - name: Install packages
+        run: sudo apt-get install -y iwyu valgrind
+      - name: Install ICU
         run: |
           sudo apt-get install -y libicu-dev
         if: matrix.encoding == 'ICU'
-      - name: build
-        run: .build/build
-      - name: unittest
+      - name: Build
+        env:
+          CPP_STANDARD: ${{ matrix.cpp-standard }}
+          ENCODING_TYPE: ${{ matrix.encoding }}
+          # This tells the C++ compiler to produce debugging info that Valgrind needs to report line numbers.
+          # See also https://valgrind.org/docs/manual/manual-core.html#manual-core.started
+          CMAKE_BUILD_TYPE: Debug
+        run: |
+          .build/build \
+            -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" \
+            -DSTRING_ENCODING_TYPE="$ENCODING_TYPE" \
+            -DCMAKE_CXX_STANDARD="$CPP_STANDARD" -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF \
+            -DCMAKE_CXX_INCLUDE_WHAT_YOU_USE='include-what-you-use;-Xiwyu;--verbose=3'
+      - name: Run tests
+        run: .build/run-unittest --valgrind
+  macos:
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        cpp-standard:
+          - '98'
+          - '11'
+          - '20'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install GoogleTest
+        env:
+          CPP_STANDARD: ${{ matrix.cpp-standard }}
+        run: .build/install-gtest "$CPP_STANDARD"
+      - name: Build
+        env:
+          CPP_STANDARD: ${{ matrix.cpp-standard }}
+          # This tells the C++ compiler to produce debugging info that Valgrind needs to report line numbers.
+          # See also https://valgrind.org/docs/manual/manual-core.html#manual-core.started
+          CMAKE_BUILD_TYPE: Debug
+        run: |
+          .build/build \
+            -DCMAKE_BUILD_TYPE="$CMAKE_BUILD_TYPE" \
+            -DCMAKE_CXX_STANDARD="$CPP_STANDARD" -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
+      - name: Run tests
         run: .build/run-unittest
 
   # Builds and runs tests on Ubuntu 7.10.
@@ -41,22 +87,22 @@ jobs:
   # This one is challenging:
   #
   # * It's impossible to run git clone inside this container (as old git will use ancient protocols not supported anymore
-  #   by GitHub, and also standard `actions/checkout@v3` will depend on NodeJS/npm, which are not available in this container).
+  #   by GitHub, and also standard `actions/checkout@v4` will depend on Node.js/npm, which are not available in this container).
   #   To work around this, we start/stop container manually and use targeted execution of specific build/run commands only
   #   inside the container, keeping git and networking stuff out.
   #
-  # * For gcc, vast majority of C++11 features are missing from this release (many were added around GCC 4.3 and 4.4).
-  #   Some C99 features are also missing. C++98 support seems to be full-featued.
+  # * For gcc, the vast majority of C++11 features are missing from this release (many were added around GCC 4.3 and 4.4).
+  #   Some C99 features are also missing. C++98 support seems to be full-featured.
   #
   # * Modern GTest doesn't work in this environment, as GTest v1.12.x requires C++11 and modern GTest v1.13+ requires C++14.
   #   To work around this, we supply nano substitute of GTest (tests/gtest-nano.h), partially compatible with API.
   #
   # * CMake is way too old to be usable without major rewrite of all the CMakeLists.txt to use ancient/deprecated syntax.
-  #   To work around this, we use plain GNU make(1) and supply custom Makefile.gcc4.
+  #   To work around this, we use plain GNU make(1) and supply custom gcc4.mk.
   linux_ubuntu_7_10:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: docker pull
         run: |
           docker pull icomputer7/ancient-ubuntu-docker:gutsy
@@ -66,10 +112,10 @@ jobs:
           docker start u710
       - name: restore
         run: |
-          docker exec u710 sh -c 'pwd && ls -al && apt-get update && apt-get -y --no-install-recommends install make g++'
+          docker exec u710 sh -c 'pwd && ls -al && apt-get update && apt-get -y --no-install-recommends install make g++ zlib1g-dev'
       - name: build
         run: |
-          docker exec u710 sh -c 'make -f Makefile.gcc4'
+          docker exec u710 sh -c 'make -f gcc4.mk'
       - name: unittest
         run: |
           docker exec u710 sh -c 'build/unittest'
@@ -79,14 +125,73 @@ jobs:
           docker rm u710
   windows:
     runs-on: windows-latest
-    # NB: see https://github.com/actions/runner-images/blob/main/images/win/Windows2022-Readme.md for what's available in this image
+    # NB: see https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md for what's available in this image
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: restore
         run: |
           C:\vcpkg\bootstrap-vcpkg.bat
-          C:\vcpkg\vcpkg install gtest:x64-windows
+          C:\vcpkg\vcpkg install gtest:x64-windows zlib:x64-windows
       - name: build
-        run: .build\build.ps1 -GTestPath C:\vcpkg\installed\x64-windows
+        run: |
+          .build\build.ps1 -GTestPath C:\vcpkg\installed\x64-windows -- `
+            -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
       - name: unittest
         run: .build\run-unittest.ps1
+  freebsd_14_2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run in FreeBSD
+        uses: vmactions/freebsd-vm@v1
+        with:
+          release: "14.2"
+          usesh: true
+          prepare: |
+            pkg install -y git cmake
+
+          run: |
+            echo '#### System information'
+            whoami
+            env
+            freebsd-version
+            c++ --version
+            gcc --version
+            clang++ --version
+            pkg info
+
+            echo '#### Installing GoogleTest'
+            .build/install-gtest 11
+
+            echo '#### Building'
+            .build/build -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
+
+            echo '#### Testing'
+            .build/run-unittest
+  netbsd_10_1:
+    runs-on: ubuntu-latest
+    # Doesn't use clang, has gcc:
+    # c++ (nb3 20231008) 10.5.0
+    # Copyright (C) 2020 Free Software Foundation, Inc.
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run in NetBSD
+        uses: vmactions/netbsd-vm@v1
+        with:
+          release: "10.1"
+          usesh: true
+          prepare: |
+            /usr/sbin/pkg_add cmake googletest
+
+          run: |
+            echo '#### System information'
+            whoami
+            env
+            c++ --version
+            gcc --version
+
+            echo '#### Building'
+            .build/build -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
+
+            echo '#### Testing'
+            .build/run-unittest

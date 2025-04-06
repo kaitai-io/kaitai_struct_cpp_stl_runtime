@@ -1,11 +1,69 @@
 #ifdef GTEST_NANO
 #include "tests/gtest-nano.h"
 #else
-#include <gtest/gtest.h>
+// These IWYU pragmas are needed for versions of GoogleTest older than 1.12,
+// see https://github.com/kaitai-io/kaitai_struct_cpp_stl_runtime/pull/72#issuecomment-2093287161
+#include "gtest/gtest.h" // IWYU pragma: keep
+// IWYU pragma: no_include <gtest/gtest-message.h>
+// IWYU pragma: no_include <gtest/gtest-test-part.h>
+// IWYU pragma: no_include "gtest/gtest_pred_impl.h"
 #endif
 
 #include "kaitai/kaitaistream.h"
 #include "kaitai/exceptions.h"
+
+#include <stdint.h> // int8_t, int16_t, int32_t, int64_t, uint8_t, uint16_t, uint32_t, uint64_t
+
+#include <limits> // std::numeric_limits
+#include <sstream> // std::istringstream
+#include <stdexcept> // std::out_of_range, std::invalid_argument
+#include <string> // std::string
+
+#define SETUP_STREAM(...)                                                                  \
+    const uint8_t input_bytes[] = { __VA_ARGS__ };                                         \
+    std::string input_str(reinterpret_cast<const char*>(input_bytes), sizeof input_bytes); \
+    std::istringstream is(input_str);                                                      \
+    kaitai::kstream ks(&is);
+
+TEST(KaitaiStreamTest, read_s1)
+{
+    SETUP_STREAM(42, 0xff, 0x80);
+    EXPECT_EQ(ks.read_s1(), 42);
+    EXPECT_EQ(ks.read_s1(), -1);
+    EXPECT_EQ(ks.read_s1(), -128);
+}
+
+TEST(KaitaiStreamTest, read_u1)
+{
+    SETUP_STREAM(42, 0xff, 0x80);
+    EXPECT_EQ(ks.read_u1(), 42);
+    EXPECT_EQ(ks.read_u1(), 255);
+    EXPECT_EQ(ks.read_u1(), 128);
+}
+
+TEST(KaitaiStreamTest, read_f4le)
+{
+    SETUP_STREAM(208, 15, 73, 64);
+    EXPECT_FLOAT_EQ(ks.read_f4le(), 3.14159f);
+}
+
+TEST(KaitaiStreamTest, read_f4be)
+{
+    SETUP_STREAM(64, 73, 15, 208);
+    EXPECT_FLOAT_EQ(ks.read_f4be(), 3.14159f);
+}
+
+TEST(KaitaiStreamTest, read_f8le)
+{
+    SETUP_STREAM(110, 134, 27, 240, 249, 33, 9, 64);
+    EXPECT_DOUBLE_EQ(ks.read_f8le(), 3.14159);
+}
+
+TEST(KaitaiStreamTest, read_f8be)
+{
+    SETUP_STREAM(64, 9, 33, 249, 240, 27, 134, 110);
+    EXPECT_DOUBLE_EQ(ks.read_f8be(), 3.14159);
+}
 
 TEST(KaitaiStreamTest, to_string)
 {
@@ -13,52 +71,99 @@ TEST(KaitaiStreamTest, to_string)
     EXPECT_EQ(kaitai::kstream::to_string(-123), "-123");
 }
 
-TEST(KaitaiStreamTest, to_string_uint8)
+// Since `kstream::to_string` must have several overloads (just like
+// [`std::to_string`](https://en.cppreference.com/w/cpp/string/basic_string/to_string)) to
+// cover all [standard integer
+// types](https://en.cppreference.com/w/cpp/language/types#Properties) while avoiding
+// templates, it's a good idea to test whether it actually works with each standard
+// integer type. If even just one of the 6 required overloads is missing or not working,
+// these tests should be able to detect it.
+//
+// We test the standard integer types (keywords), not [fixed width integer
+// types](https://en.cppreference.com/w/cpp/header/cstdint) (like `int32_t`), because then
+// we could potentially have a blind spot: `int32_t` tends to be almost universally
+// equivalent to `int`, but `int64_t` is either `long` (typically on 64-bit Linux) or
+// `long long` (typically on 64-bit Windows) but not both. So I believe that using
+// standard integer types gives us better coverage.
+
+TEST(KaitaiStreamTest, to_string_unsigned_char)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint8_t>::min()), "0");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint8_t>::max()), "255");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned char>::min()), "0");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned char>::max()), "255");
 }
 
-TEST(KaitaiStreamTest, to_string_int8)
+TEST(KaitaiStreamTest, to_string_signed_char)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int8_t>::min()), "-128");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int8_t>::max()), "127");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<signed char>::min()), "-128");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<signed char>::max()), "127");
 }
 
-TEST(KaitaiStreamTest, to_string_uint16)
+TEST(KaitaiStreamTest, to_string_unsigned_short)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint16_t>::min()), "0");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint16_t>::max()), "65535");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned short>::min()), "0");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned short>::max()), "65535");
 }
 
-TEST(KaitaiStreamTest, to_string_int16)
+TEST(KaitaiStreamTest, to_string_short)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int16_t>::min()), "-32768");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int16_t>::max()), "32767");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<short>::min()), "-32768");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<short>::max()), "32767");
 }
 
-TEST(KaitaiStreamTest, to_string_uint32)
+TEST(KaitaiStreamTest, to_string_unsigned)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint32_t>::min()), "0");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint32_t>::max()), "4294967295");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned>::min()), "0");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned>::max()), "4294967295");
 }
 
-TEST(KaitaiStreamTest, to_string_int32)
+TEST(KaitaiStreamTest, to_string_int)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int32_t>::min()), "-2147483648");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int32_t>::max()), "2147483647");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int>::min()), "-2147483648");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int>::max()), "2147483647");
 }
 
-TEST(KaitaiStreamTest, to_string_uint64)
+#ifdef _MSC_VER
+#pragma warning(push)
+// Disable `warning C4127: conditional expression is constant`
+// (see https://learn.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4127?view=msvc-170)
+#pragma warning(disable: 4127)
+#endif
+
+TEST(KaitaiStreamTest, to_string_unsigned_long)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint64_t>::min()), "0");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<uint64_t>::max()), "18446744073709551615");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long>::min()), "0");
+    if (sizeof(unsigned long) == 4) {
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long>::max()), "4294967295");
+    } else {
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long>::max()), "18446744073709551615");
+    }
 }
 
-TEST(KaitaiStreamTest, to_string_int64)
+TEST(KaitaiStreamTest, to_string_long)
 {
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int64_t>::min()), "-9223372036854775808");
-    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<int64_t>::max()), "9223372036854775807");
+    if (sizeof(long) == 4) {
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long>::min()), "-2147483648");
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long>::max()), "2147483647");
+    } else {
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long>::min()), "-9223372036854775808");
+        EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long>::max()), "9223372036854775807");
+    }
+}
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+TEST(KaitaiStreamTest, to_string_unsigned_long_long)
+{
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long long>::min()), "0");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<unsigned long long>::max()), "18446744073709551615");
+}
+
+TEST(KaitaiStreamTest, to_string_long_long)
+{
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long long>::min()), "-9223372036854775808");
+    EXPECT_EQ(kaitai::kstream::to_string(std::numeric_limits<long long>::max()), "9223372036854775807");
 }
 
 TEST(KaitaiStreamTest, string_to_int)
@@ -155,16 +260,146 @@ TEST(KaitaiStreamTest, string_to_int_garbage)
     }
 }
 
+// Tests a successful zlib decompression.
+TEST(KaitaiStreamTest, process_zlib_ok)
+{
+    /*
+    Python code to generate (used Python 3.10.12 and
+    `zlib.ZLIB_RUNTIME_VERSION == zlib.ZLIB_VERSION == '1.2.11'`):
+
+    ```python
+    import zlib
+    data = zlib.compress(b"Hi")
+    print(", ".join([f"0x{b:02x}" for b in data]))
+    ```
+    */
+    SETUP_STREAM(0x78, 0x9c, 0xf3, 0xc8, 0x04, 0x00, 0x00, 0xfb, 0x00, 0xb2)
+    EXPECT_EQ(kaitai::kstream::process_zlib(ks.read_bytes_full()), "Hi");
+}
+
+// It's probably not a good idea to run this test in CI because it has to allocate 4 GiB of memory.
+// That's why it is disabled (see
+// https://google.github.io/googletest/advanced.html#temporarily-disabling-tests). You can still run
+// it locally using `.build/run-unittest --valgrind -- --gtest_also_run_disabled_tests` or
+// `.build\run-unittest.ps1 --gtest_also_run_disabled_tests`.
+TEST(KaitaiStreamTest, DISABLED_process_zlib_input_too_long)
+{
+    try {
+        kaitai::kstream::process_zlib(
+            std::string(
+                static_cast<std::string::size_type>(std::numeric_limits<unsigned>::max()) + 1,
+                '\x00'
+            )
+        );
+        FAIL() << "Expected runtime_error exception";
+    } catch (const std::length_error& e) {
+        EXPECT_EQ(e.what(), std::string(
+            "process_zlib: input is 4294967296 bytes long, which exceeds"
+            " the maximum supported length of 4294967295 bytes"
+        ));
+    }
+}
+
+// Tests a failed zlib decompression due to the `inflate()` function returning `Z_BUF_ERROR`.
+TEST(KaitaiStreamTest, process_zlib_z_buf_error)
+{
+    // The same bytes as in the previous `process_zlib_ok` test, but truncated (without the last byte).
+    /*
+    Python code to generate (used Python 3.10.12 and
+    `zlib.ZLIB_RUNTIME_VERSION == zlib.ZLIB_VERSION == '1.2.11'`):
+
+    ```python
+    import zlib
+    data = zlib.compress(b"Hi")
+    truncated_data = data[:-1]
+    print(", ".join([f"0x{b:02x}" for b in truncated_data]))
+    ```
+    */
+    SETUP_STREAM(0x78, 0x9c, 0xf3, 0xc8, 0x04, 0x00, 0x00, 0xfb, 0x00)
+    try {
+        kaitai::kstream::process_zlib(ks.read_bytes_full());
+        FAIL() << "Expected runtime_error exception";
+    } catch (const std::runtime_error& e) {
+        EXPECT_EQ(e.what(), std::string("process_zlib: inflate() failed: incomplete or truncated input data"));
+    }
+}
+
+// Tests a failed zlib decompression due to the `inflate()` function returning `Z_DATA_ERROR`.
+TEST(KaitaiStreamTest, process_zlib_z_data_error)
+{
+    /*
+    Python code to generate (used Python 3.10.12 and
+    `zlib.ZLIB_RUNTIME_VERSION == zlib.ZLIB_VERSION == '1.2.11'`):
+
+    ```python
+    import zlib
+    data = bytearray(zlib.compress(b"Hi"))
+    # Just change the value of `FCHECK` (see https://www.rfc-editor.org/rfc/rfc1950.html#page-5),
+    # which will invalidate the zlib header
+    data[1] ^= 0x01
+    print(", ".join([f"0x{b:02x}" for b in data]))
+    ```
+    */
+    SETUP_STREAM(0x78, 0x9d, 0xf3, 0xc8, 0x04, 0x00, 0x00, 0xfb, 0x00, 0xb2)
+    try {
+        kaitai::kstream::process_zlib(ks.read_bytes_full());
+        FAIL() << "Expected runtime_error exception";
+    } catch (const std::runtime_error& e) {
+        EXPECT_EQ(e.what(), std::string("process_zlib: inflate() failed: incorrect header check"));
+    }
+}
+
+// Tests a failed zlib decompression due to the `inflate()` function returning `Z_NEED_DICT`.
+TEST(KaitaiStreamTest, process_zlib_z_need_dict)
+{
+    /*
+    Python code to generate (used Python 3.10.12 and
+    `zlib.ZLIB_RUNTIME_VERSION == zlib.ZLIB_VERSION == '1.2.11'`):
+
+    ```python
+    import zlib
+    co = zlib.compressobj(zdict=b"foobar")
+    data = (co.compress(b"foobar") + co.flush())
+    print(", ".join([f"0x{b:02x}" for b in data]))
+    ```
+    */
+    SETUP_STREAM(0x78, 0xbb, 0x08, 0xab, 0x02, 0x7a, 0x4b, 0x03, 0x93, 0x00, 0x08, 0xab, 0x02, 0x7a)
+    try {
+        kaitai::kstream::process_zlib(ks.read_bytes_full());
+        FAIL() << "Expected runtime_error exception";
+    } catch (const std::runtime_error& e) {
+        EXPECT_EQ(e.what(), std::string("process_zlib: inflate() failed: preset dictionary needed"));
+    }
+}
+
 TEST(KaitaiStreamTest, bytes_to_str_ascii)
 {
     std::string res = kaitai::kstream::bytes_to_str("Hello, world!", "ASCII");
     EXPECT_EQ(res, "Hello, world!");
 }
 
+TEST(KaitaiStreamTest, bytes_to_str_empty_ascii)
+{
+    std::string res = kaitai::kstream::bytes_to_str("", "ASCII");
+    EXPECT_EQ(res, "");
+}
+
+TEST(KaitaiStreamTest, bytes_to_str_empty_utf16le)
+{
+    std::string res = kaitai::kstream::bytes_to_str("", "UTF-16LE");
+    EXPECT_EQ(res, "");
+}
+
+TEST(KaitaiStreamTest, bytes_to_str_empty_utf16be)
+{
+    std::string res = kaitai::kstream::bytes_to_str("", "UTF-16BE");
+    EXPECT_EQ(res, "");
+}
+
 #ifndef KS_STR_ENCODING_NONE
 TEST(KaitaiStreamTest, bytes_to_str_iso_8859_1)
 {
-    std::string res = kaitai::kstream::bytes_to_str("\xC4\xD6\xDC\xE4\xF6\xFC\xDF\xA6", "ISO-8859-1");
+    std::string res = kaitai::kstream::bytes_to_str("\xC4\xD6\xDC\xE4\xF6\xFC\x80\x9F\xDF\xA6", "ISO-8859-1");
     EXPECT_EQ(res,
         "\xC3\x84"  // U+00C4 LATIN CAPITAL LETTER A WITH DIAERESIS
         "\xC3\x96"  // U+00D6 LATIN CAPITAL LETTER O WITH DIAERESIS
@@ -172,6 +407,8 @@ TEST(KaitaiStreamTest, bytes_to_str_iso_8859_1)
         "\xC3\xA4"  // U+00E4 LATIN SMALL LETTER A WITH DIAERESIS
         "\xC3\xB6"  // U+00F6 LATIN SMALL LETTER O WITH DIAERESIS
         "\xC3\xBC"  // U+00FC LATIN SMALL LETTER U WITH DIAERESIS
+        "\xC2\x80"  // U+0080 <Padding Character> (PAD)
+        "\xC2\x9F"  // U+009F <Application Program Command> (APC)
         "\xC3\x9F"  // U+00DF LATIN SMALL LETTER SHARP S
         "\xC2\xA6"  // U+00A6 BROKEN BAR
     );
@@ -179,7 +416,7 @@ TEST(KaitaiStreamTest, bytes_to_str_iso_8859_1)
 
 TEST(KaitaiStreamTest, bytes_to_str_iso_8859_15)
 {
-    std::string res = kaitai::kstream::bytes_to_str("\xC4\xD6\xDC\xE4\xF6\xFC\xDF\xA6", "ISO-8859-15");
+    std::string res = kaitai::kstream::bytes_to_str("\xC4\xD6\xDC\xE4\xF6\xFC\x80\x9F\xDF\xA6", "ISO-8859-15");
     EXPECT_EQ(res,
         "\xC3\x84"  // U+00C4 LATIN CAPITAL LETTER A WITH DIAERESIS
         "\xC3\x96"  // U+00D6 LATIN CAPITAL LETTER O WITH DIAERESIS
@@ -187,8 +424,21 @@ TEST(KaitaiStreamTest, bytes_to_str_iso_8859_15)
         "\xC3\xA4"  // U+00E4 LATIN SMALL LETTER A WITH DIAERESIS
         "\xC3\xB6"  // U+00F6 LATIN SMALL LETTER O WITH DIAERESIS
         "\xC3\xBC"  // U+00FC LATIN SMALL LETTER U WITH DIAERESIS
+        "\xC2\x80"  // U+0080 <Padding Character> (PAD)
+        "\xC2\x9F"  // U+009F <Application Program Command> (APC)
         "\xC3\x9F"  // U+00DF LATIN SMALL LETTER SHARP S
         "\xC5\xA0"  // U+0160 LATIN CAPITAL LETTER S WITH CARON
+    );
+}
+
+TEST(KaitaiStreamTest, bytes_to_str_windows1252)
+{
+    std::string res = kaitai::kstream::bytes_to_str("\x80\x9F\xDF\xA6", "windows-1252");
+    EXPECT_EQ(res,
+        "\xE2\x82\xAC"  // U+20AC EURO SIGN
+        "\xC5\xB8"      // U+0178 LATIN CAPITAL LETTER Y WITH DIAERESIS
+        "\xC3\x9F"      // U+00DF LATIN SMALL LETTER SHARP S
+        "\xC2\xA6"      // U+00A6 BROKEN BAR
     );
 }
 
@@ -215,7 +465,8 @@ TEST(KaitaiStreamTest, bytes_to_str_ibm437)
 
 TEST(KaitaiStreamTest, bytes_to_str_utf16le)
 {
-    // NB: UTF16 bytes representation will have binary zeroes in the middle, so we need to convert it to std::string with explicit length
+    // NB: UTF-16 bytes representation will have binary zeroes in the middle, so we need
+    // to convert it to std::string with explicit length
     std::string res = kaitai::kstream::bytes_to_str(std::string("\x41\x00\x42\x00\x91\x25\x70\x24", 8), "UTF-16LE");
     EXPECT_EQ(res,
         "AB"
@@ -226,7 +477,8 @@ TEST(KaitaiStreamTest, bytes_to_str_utf16le)
 
 TEST(KaitaiStreamTest, bytes_to_str_utf16be)
 {
-    // NB: UTF16 bytes representation will have binary zeroes in the middle, so we need to convert it to std::string with explicit length
+    // NB: UTF-16 bytes representation will have binary zeroes in the middle, so we need
+    // to convert it to std::string with explicit length
     std::string res = kaitai::kstream::bytes_to_str(std::string("\x00\x41\x00\x42\x25\x91\x24\x70", 8), "UTF-16BE");
     EXPECT_EQ(res,
         "AB"
@@ -237,9 +489,9 @@ TEST(KaitaiStreamTest, bytes_to_str_utf16be)
 
 TEST(KaitaiStreamTest, bytes_to_str_big_dest)
 {
-    // Prepare a string in IBM437 that is reasonably big, fill it with U+2248 ALMOST EQUAL TO character,
-    // which is just 1 byte 0xFB in IBM437.
-    const int len = 10;
+    // Prepare a string in IBM437 that is reasonably big, fill it with U+2248 ALMOST EQUAL TO
+    // character, which is just 1 byte 0xFB in IBM437.
+    const int len = 10000000;
     std::string src(len, '\xF7');
 
     std::string res = kaitai::kstream::bytes_to_str(src, "IBM437");
@@ -258,12 +510,26 @@ TEST(KaitaiStreamTest, bytes_to_str_unknown_encoding)
     }
 }
 
+// If the bytes_to_str implementation treats the empty string as a special case, it should
+// make sure to throw an unknown_encoding exception even if the input string is empty (in
+// other words, the check for an empty string and possible early successful return should
+// only be done after checking the encoding).
+TEST(KaitaiStreamTest, bytes_to_str_unknown_encoding_empty)
+{
+    try {
+        std::string res = kaitai::kstream::bytes_to_str("", "invalid");
+        FAIL() << "Expected unknown_encoding exception";
+    } catch (const kaitai::unknown_encoding& e) {
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: unknown encoding: `invalid`"));
+    }
+}
+
 // Different libraries have different ideas of what they consider "illegal sequence", so
-// we end up testing several case which seems to be flagged by everybody equally.
+// we end up testing several cases which seem to be flagged by everybody equally.
 
 TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_euc_jp_too_short)
 {
-    // In EUC-JP, 0xb0 introduces a sequence of 2 bytes in so called "code set 1", but 0xb0
+    // In EUC-JP, 0xb0 introduces a sequence of 2 bytes in so-called "code set 1", but 0xb0
     // by itself is invalid.
 
     try {
@@ -300,8 +566,17 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_too_short)
     }
 }
 
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__APPLE__)
+TEST(KaitaiStreamTest, DISABLED_bytes_to_str_invalid_seq_gb2312_two_bytes)
+#else
 TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_two_bytes)
+#endif
 {
+    // 0xB0 0x30 is illegal sequence in GB2312: 0xB0 must be followed by [0xA1..0xFE]. However,
+    // some iconv engines, namely CITRUS integrated with modern FreeBSD (10+) and NetBSD, are
+    // not considering this an error and thus not returning EILSEQ. Iconv preinstalled in the
+    // GitHub Actions `macos-14` runner image does not consider this an error either.
+    //
     try {
         std::string res = kaitai::kstream::bytes_to_str("\xb0\x30", "GB2312");
         FAIL() << "Expected illegal_seq_in_encoding exception";
@@ -318,7 +593,7 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_two_bytes)
     }
 }
 
-TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf_16le_odd_bytes)
+TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf16le_odd_bytes)
 {
     // UTF-16 requires even number of bytes, so 3 bytes is incomplete UTF-16 sequence.
     try {
@@ -337,7 +612,7 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf_16le_odd_bytes)
     }
 }
 
-TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf_16le_incomplete_high_surrogate)
+TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf16le_incomplete_high_surrogate)
 {
     // UTF-16 disallows having high surrogate (any value in the range of 0xd800..0xdbff) not
     // followed by low surrogate (any value in the range of 0xdc00..0xdfff).

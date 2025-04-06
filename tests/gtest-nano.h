@@ -1,6 +1,8 @@
 // gtest-nano.h implements very minimalistic GTest-compatible API that can be used to run tests in older
 // (C++98-compatible) environments.
 
+#include <cmath>
+#include <cstring>
 #include <iostream>
 #include <vector>
 
@@ -15,7 +17,22 @@ namespace testing {
     bool g_testPass;
     bool g_allPass;
 
-    void InitGoogleTest(int *argc, char **argv) {
+    bool FLAGS_gtest_also_run_disabled_tests = false;
+
+    const char DISABLED_TEST_PREFIX[] = "DISABLED_";
+    const std::size_t STRLEN_DISABLED_TEST_PREFIX = sizeof(DISABLED_TEST_PREFIX) - 1; // `- 1` due to the null terminator
+
+    void InitGoogleTest(const int *argc, char **argv) {
+        for (int i = 1; i < *argc; i++) {
+            if (std::strcmp(argv[i], "--gtest_also_run_disabled_tests") == 0) {
+                FLAGS_gtest_also_run_disabled_tests = true;
+            } else {
+                std::cerr
+                        << "Warning: unrecognized argument " << argv[i]
+                        << " (the only supported flag is --gtest_also_run_disabled_tests)\n";
+            }
+        }
+
         std::cout << "[----------] gtest-nano: starting up\n";
     }
 
@@ -25,6 +42,17 @@ namespace testing {
         g_allPass = true;
         for (std::vector<TestInfo>::const_iterator it = g_tests.begin(); it != g_tests.end(); ++it) {
             const TestInfo &test = *it;
+            bool is_disabled = false;
+            if (std::strncmp(test.suite, DISABLED_TEST_PREFIX, STRLEN_DISABLED_TEST_PREFIX) == 0) {
+                is_disabled = true;
+            }
+            if (std::strncmp(test.name, DISABLED_TEST_PREFIX, STRLEN_DISABLED_TEST_PREFIX) == 0) {
+                is_disabled = true;
+            }
+            if (is_disabled && !FLAGS_gtest_also_run_disabled_tests) {
+                std::cout << "[ DISABLED ] " << test.suite << "." << test.name << "\n";
+                continue;
+            }
             g_testPass = true;
             std::cout << "[ RUN      ] " << test.suite << "." << test.name << "\n";
             test.testFunc();
@@ -62,6 +90,17 @@ namespace testing {
             ::testing::g_testPass = false;        \
         }                                         \
     } while (false)
+
+// Floating point comparison macro
+#define EXPECT_FLOAT_EQ(a, b)                     \
+    do {                                          \
+        if (std::fabs(a - b) < 1e-6) {            \
+        } else {                                  \
+            ::testing::g_testPass = false;        \
+        }                                         \
+    } while (false)
+
+#define EXPECT_DOUBLE_EQ(a, b) EXPECT_FLOAT_EQ(a, b)
 
 // Failure macro
 #define FAIL()                     \
