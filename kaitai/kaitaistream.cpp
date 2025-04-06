@@ -874,45 +874,105 @@ std::string kaitai::kstream::bytes_to_str(const std::string src, int codepage) {
 
 #elif defined(KS_STR_ENCODING_ICU)
 #include <unicode/ucnv.h>
-#include <iostream>
+#include <unicode/ustring.h>
 
 std::string kaitai::kstream::bytes_to_str(const std::string src, const char *src_enc) {
-    // Start with a buffer length of double the source length.
-    size_t init_dst_len = src.length() * 2;
-    std::string dst(init_dst_len, ' ');
-
     UErrorCode err = U_ZERO_ERROR;
-    int32_t dst_len = ucnv_convert(KS_STR_DEFAULT_ENCODING, src_enc, &dst[0], init_dst_len, src.c_str(), src.length(), &err);
-
-    if (err == U_BUFFER_OVERFLOW_ERROR) {
-        // We need a bigger buffer, but at least we know how much space exactly we need now
-        dst.resize(dst_len, ' ');
-
-        // Try again with the new buffer
-        err = U_ZERO_ERROR;
-        dst_len = ucnv_convert(KS_STR_DEFAULT_ENCODING, src_enc, &dst[0], dst_len, src.c_str(), src.length(), &err);
-    } else if (!U_FAILURE(err)) {
-        // Conversion succeed from the first try, shrink the buffer to fit
-        dst.resize(dst_len);
-    }
-
-    std::cout << "err = " << err << std::endl;
-    // Dump all bytes of result
-    for (int i = 0; i < dst_len; i++) {
-        std::cout << std::hex << (int)(uint8_t)dst[i] << " ";
-    }
-    std::cout << "\n";
-
+    
+    // Open the source converter
+    UConverter* conv = ucnv_open(src_enc, &err);
     if (U_FAILURE(err)) {
-        // Conversion failed
         if (err == U_FILE_ACCESS_ERROR) {
             throw unknown_encoding(src_enc);
-        } else {
-            throw bytes_to_str_error(u_errorName(err));
         }
+        throw bytes_to_str_error(u_errorName(err));
     }
 
-    return dst;
+    // Open UTF-8 converter
+    UConverter* utf8Conv = ucnv_open("UTF-8", &err);
+    if (U_FAILURE(err)) {
+        ucnv_close(conv);
+        throw bytes_to_str_error(u_errorName(err));
+    }
+
+    // Configure source converter to stop on illegal sequences
+    err = U_ZERO_ERROR;
+    ucnv_setToUCallBack(conv,
+                       UCNV_TO_U_CALLBACK_STOP,
+                       NULL,
+                       NULL,
+                       NULL,
+                       &err);
+    if (U_FAILURE(err)) {
+        ucnv_close(conv);
+        ucnv_close(utf8Conv);
+        throw illegal_seq_in_encoding(u_errorName(err));
+    }
+
+    // Allocate buffer for UTF-16 intermediate representation
+    const int32_t uniStrCapacity = UCNV_GET_MAX_BYTES_FOR_STRING(src.length(), ucnv_getMaxCharSize(conv));
+    UChar* uniStr = new UChar[uniStrCapacity];
+
+    // Convert from source encoding to UTF-16
+    err = U_ZERO_ERROR;
+    int32_t uniLength = ucnv_toUChars(conv,
+                                    uniStr,
+                                    uniStrCapacity,
+                                    src.c_str(),
+                                    src.length(),
+                                    &err);
+    if (U_FAILURE(err)) {
+        delete[] uniStr;
+        ucnv_close(conv);
+        ucnv_close(utf8Conv);
+        throw illegal_seq_in_encoding(u_errorName(err));
+    }
+
+    // Configure target converter to stop on illegal sequences
+    err = U_ZERO_ERROR;
+    ucnv_setFromUCallBack(utf8Conv,
+                         UCNV_FROM_U_CALLBACK_STOP,
+                         NULL,
+                         NULL,
+                         NULL,
+                         &err);
+    if (U_FAILURE(err)) {
+        delete[] uniStr;
+        ucnv_close(conv);
+        ucnv_close(utf8Conv);
+        throw illegal_seq_in_encoding(u_errorName(err));
+    }
+
+    // Allocate buffer for UTF-8 output
+    const int32_t dstCapacity = UCNV_GET_MAX_BYTES_FOR_STRING(uniLength, ucnv_getMaxCharSize(utf8Conv));
+    char* dst = new char[dstCapacity];
+
+    // Convert from UTF-16 to UTF-8
+    err = U_ZERO_ERROR;
+    int32_t outputLength = ucnv_fromUChars(utf8Conv,
+                                        dst,
+                                        dstCapacity,
+                                        uniStr,
+                                        uniLength,
+                                        &err);
+    if (U_FAILURE(err)) {
+        delete[] uniStr;
+        delete[] dst;
+        ucnv_close(conv);
+        ucnv_close(utf8Conv);
+        throw illegal_seq_in_encoding(u_errorName(err));
+    }
+
+    // Create result string
+    std::string result(dst, outputLength);
+
+    // Clean up
+    delete[] uniStr;
+    delete[] dst;
+    ucnv_close(conv);
+    ucnv_close(utf8Conv);
+
+    return result;
 }
 #else
 #error Need to decide how to handle strings: please define one of: KS_STR_ENCODING_ICONV, KS_STR_ENCODING_WIN32API, KS_STR_ENCODING_ICU, KS_STR_ENCODING_NONE

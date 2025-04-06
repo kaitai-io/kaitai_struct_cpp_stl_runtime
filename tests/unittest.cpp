@@ -275,13 +275,12 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_euc_jp_too_short)
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: MultiByteToWideChar"));
 #elif defined(KS_STR_ENCODING_ICU)
-        EXPECT_EQ(e.what(), std::string("xxx"));
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_TRUNCATED_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
     }
 }
-
 
 TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_too_short)
 {
@@ -294,7 +293,7 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_too_short)
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: MultiByteToWideChar"));
 #elif defined(KS_STR_ENCODING_ICU)
-        EXPECT_EQ(e.what(), std::string("xxx"));
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_TRUNCATED_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -312,7 +311,7 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_two_bytes)
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: MultiByteToWideChar"));
 #elif defined(KS_STR_ENCODING_ICU)
-        EXPECT_EQ(e.what(), std::string("xxx"));
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_ILLEGAL_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -331,7 +330,7 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf_16le_odd_bytes)
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: incomplete"));
 #elif defined(KS_STR_ENCODING_ICU)
-        EXPECT_EQ(e.what(), std::string("xxx"));
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_TRUNCATED_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -351,7 +350,7 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf_16le_incomplete_high_surroga
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: WideCharToMultiByte"));
 #elif defined(KS_STR_ENCODING_ICU)
-        EXPECT_EQ(e.what(), std::string("xxx"));
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_TRUNCATED_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif

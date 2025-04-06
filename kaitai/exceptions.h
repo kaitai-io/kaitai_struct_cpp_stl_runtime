@@ -49,7 +49,8 @@ public:
 class illegal_seq_in_encoding: public bytes_to_str_error {
 public:
     illegal_seq_in_encoding(const std::string what):
-        bytes_to_str_error("illegal sequence: " + what) {}
+        bytes_to_str_error("illegal sequence: " + what)
+    {}
 
     virtual ~illegal_seq_in_encoding() KS_NOEXCEPT {};
 };
@@ -115,20 +116,17 @@ protected:
 template<typename T>
 class validation_not_equal_error: public validation_failed_error {
 public:
-    validation_not_equal_error<T>(const T& expected, const T& actual, kstream* io, const std::string src_path):
-        validation_failed_error("not equal", io, src_path),
+    validation_not_equal_error(const T& expected, const T& actual, kstream* io, const std::string src_path):
+        validation_failed_error("not equal", src_path, io),
         m_expected(expected),
         m_actual(actual)
     {
     }
 
-    // "not equal, expected #{expected.inspect}, but got #{actual.inspect}"
+    virtual ~validation_not_equal_error() KS_NOEXCEPT {};
 
-    virtual ~validation_not_equal_error<T>() KS_NOEXCEPT {};
-
-protected:
-    const T& m_expected;
-    const T& m_actual;
+    const T m_expected;
+    const T m_actual;
 };
 
 /**
@@ -138,20 +136,17 @@ protected:
 template<typename T>
 class validation_less_than_error: public validation_failed_error {
 public:
-    validation_less_than_error<T>(const T& min, const T& actual, kstream* io, const std::string src_path):
-        validation_failed_error("not in range", io, src_path),
+    validation_less_than_error(const T& min, const T& actual, kstream* io, const std::string src_path):
+        validation_failed_error("less than", src_path, io),
         m_min(min),
         m_actual(actual)
     {
     }
 
-    // "not in range, min #{min.inspect}, but got #{actual.inspect}"
+    virtual ~validation_less_than_error() KS_NOEXCEPT {};
 
-    virtual ~validation_less_than_error<T>() KS_NOEXCEPT {};
-
-protected:
-    const T& m_min;
-    const T& m_actual;
+    const T m_min;
+    const T m_actual;
 };
 
 /**
@@ -161,20 +156,17 @@ protected:
 template<typename T>
 class validation_greater_than_error: public validation_failed_error {
 public:
-    validation_greater_than_error<T>(const T& max, const T& actual, kstream* io, const std::string src_path):
-        validation_failed_error("not in range", io, src_path),
+    validation_greater_than_error(const T& max, const T& actual, kstream* io, const std::string src_path):
+        validation_failed_error("greater than", src_path, io),
         m_max(max),
         m_actual(actual)
     {
     }
 
-    // "not in range, max #{max.inspect}, but got #{actual.inspect}"
+    virtual ~validation_greater_than_error() KS_NOEXCEPT {};
 
-    virtual ~validation_greater_than_error<T>() KS_NOEXCEPT {};
-
-protected:
-    const T& m_max;
-    const T& m_actual;
+    const T m_max;
+    const T m_actual;
 };
 
 /**
@@ -184,18 +176,15 @@ protected:
 template<typename T>
 class validation_not_any_of_error: public validation_failed_error {
 public:
-    validation_not_any_of_error<T>(const T& actual, kstream* io, const std::string src_path):
-        validation_failed_error("not any of the list", io, src_path),
+    validation_not_any_of_error(const T& actual, kstream* io, const std::string src_path):
+        validation_failed_error("not any of", src_path, io),
         m_actual(actual)
     {
     }
 
-    // "not any of the list, got #{actual.inspect}"
+    virtual ~validation_not_any_of_error() KS_NOEXCEPT {};
 
-    virtual ~validation_not_any_of_error<T>() KS_NOEXCEPT {};
-
-protected:
-    const T& m_actual;
+    const T m_actual;
 };
 
 /**
@@ -205,18 +194,15 @@ protected:
 template<typename T>
 class validation_expr_error: public validation_failed_error {
 public:
-    validation_expr_error<T>(const T& actual, kstream* io, const std::string src_path):
-        validation_failed_error("not matching the expression", io, src_path),
+    validation_expr_error(const T& actual, kstream* io, const std::string src_path):
+        validation_failed_error("expr", src_path, io),
         m_actual(actual)
     {
     }
 
-    // "not matching the expression, got #{actual.inspect}"
+    virtual ~validation_expr_error() KS_NOEXCEPT {};
 
-    virtual ~validation_expr_error<T>() KS_NOEXCEPT {};
-
-protected:
-    const T& m_actual;
+    const T m_actual;
 };
 
 }
