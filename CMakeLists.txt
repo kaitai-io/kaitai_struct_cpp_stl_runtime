@@ -12,11 +12,6 @@ find_package(Iconv)
 
 find_package(ICU COMPONENTS uc)
 
-set(ICU_FOUND FALSE)
-if(ICU_INCLUDE_DIRS AND ICU_LIBRARIES)
-    SET(ICU_FOUND TRUE)
-endif()
-
 set (HEADERS
     kaitai/kaitaistream.h
     kaitai/kaitaistruct.h
@@ -45,8 +40,7 @@ if(Iconv_FOUND)
 endif()
 
 if(ICU_FOUND)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${ICU_INCLUDE_DIRS})
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${ICU_LIBRARIES})
+    target_link_libraries(${PROJECT_NAME} PRIVATE ICU::uc)
 endif()
 
 include(Common.cmake)
