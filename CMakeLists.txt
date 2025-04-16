@@ -10,7 +10,7 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(ZLIB)
 find_package(Iconv)
 
-find_package(ICU COMPONENTS uc io)
+find_package(ICU COMPONENTS uc)
 
 set(ICU_FOUND FALSE)
 if(ICU_INCLUDE_DIRS AND ICU_LIBRARIES)
