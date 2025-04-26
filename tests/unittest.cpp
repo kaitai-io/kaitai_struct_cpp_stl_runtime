@@ -633,8 +633,23 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf16le_incomplete_high_surrogat
 }
 #endif
 
+#if defined(KS_STR_ENCODING_ICU)
+#include <unicode/uclean.h>
+#endif
+
 int main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    const int ret = RUN_ALL_TESTS();
+#if defined(KS_STR_ENCODING_ICU)
+    // See <https://unicode-org.github.io/icu/userguide/icu/design.html#icu4c-initialization-and-termination>:
+    //
+    // > When an application is terminating it should call the function `u_cleanup()`,
+    // > which frees all heap storage and other system resources that are held internally
+    // > by the ICU library. While the use of `u_cleanup()` is not strictly required,
+    // > failure to call it will cause memory leak checking tools to report problems for
+    // > resources being held by ICU library.
+    u_cleanup();
+#endif
+    return ret;
 }
