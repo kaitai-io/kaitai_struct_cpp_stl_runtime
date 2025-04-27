@@ -540,6 +540,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_euc_jp_too_short)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EINVAL"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: MultiByteToWideChar"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_TRUNCATED_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -556,6 +558,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_too_short)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EINVAL"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: MultiByteToWideChar"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_TRUNCATED_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -581,6 +585,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_gb2312_two_bytes)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EILSEQ"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: MultiByteToWideChar"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_ILLEGAL_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -598,6 +604,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf16le_odd_bytes)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EINVAL"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: incomplete"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_TRUNCATED_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -616,6 +624,8 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf16le_incomplete_high_surrogat
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: EINVAL"));
 #elif defined(KS_STR_ENCODING_WIN32API)
         EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: WideCharToMultiByte"));
+#elif defined(KS_STR_ENCODING_ICU)
+        EXPECT_EQ(e.what(), std::string("bytes_to_str error: illegal sequence: U_TRUNCATED_CHAR_FOUND"));
 #else
 #error Unknown KS_STR_ENCODING
 #endif
@@ -623,8 +633,23 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf16le_incomplete_high_surrogat
 }
 #endif
 
+#if defined(KS_STR_ENCODING_ICU)
+#include <unicode/uclean.h>
+#endif
+
 int main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    const int ret = RUN_ALL_TESTS();
+#if defined(KS_STR_ENCODING_ICU)
+    // See <https://unicode-org.github.io/icu/userguide/icu/design.html#icu4c-initialization-and-termination>:
+    //
+    // > When an application is terminating it should call the function `u_cleanup()`,
+    // > which frees all heap storage and other system resources that are held internally
+    // > by the ICU library. While the use of `u_cleanup()` is not strictly required,
+    // > failure to call it will cause memory leak checking tools to report problems for
+    // > resources being held by ICU library.
+    u_cleanup();
+#endif
+    return ret;
 }

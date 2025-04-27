@@ -10,6 +10,8 @@ set (CMAKE_INCLUDE_CURRENT_DIR ON)
 find_package(ZLIB)
 find_package(Iconv)
 
+find_package(ICU COMPONENTS uc)
+
 set (HEADERS
     kaitai/kaitaistream.h
     kaitai/kaitaistruct.h
@@ -20,7 +22,7 @@ set (SOURCES
     kaitai/kaitaistream.cpp
 )
 
-set(STRING_ENCODING_TYPE "ICONV" CACHE STRING "Set the way strings have to be encoded (ICONV|WIN32API|NONE|...)")
+set(STRING_ENCODING_TYPE "ICONV" CACHE STRING "Set the way strings have to be encoded (ICONV|WIN32API|ICU|NONE|...)")
 
 set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
@@ -35,6 +37,10 @@ endif()
 
 if(Iconv_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE Iconv::Iconv)
+endif()
+
+if(ICU_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE ICU::uc)
 endif()
 
 include(Common.cmake)
