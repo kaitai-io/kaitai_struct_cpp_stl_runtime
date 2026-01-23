@@ -1,5 +1,9 @@
 # Kaitai Struct: runtime library for C++/STL
 
+<a href="https://repology.org/project/kaitai-struct-cpp-stl-runtime/versions">
+    <img src="https://repology.org/badge/vertical-allrepos/kaitai-struct-cpp-stl-runtime.svg" alt="Packaging status" align="right">
+</a>
+
 This library implements Kaitai Struct API for C++ using STL.
 
 Kaitai Struct is a declarative language used for describe various binary
