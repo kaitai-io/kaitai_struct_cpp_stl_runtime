@@ -71,8 +71,10 @@ if [ "$gtest_version_tag" = release-1.8.1 ]; then
 fi
 mkdir build
 cd build
-# Configure - build only GoogleTest, not GoogleMock
-cmake .. -DBUILD_GMOCK=OFF
+# Configure - build only GoogleTest, not GoogleMock.
+# CMAKE_POLICY_VERSION_MINIMUM is a workaround for GoogleTest v1.8.1 (which sets `cmake_minimum_required` to `2.8.8`)
+# to make it work with CMake 4.0+, which removed compatibility with CMake < 3.5.
+cmake .. -DBUILD_GMOCK=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 # Build
 make
 # Install
