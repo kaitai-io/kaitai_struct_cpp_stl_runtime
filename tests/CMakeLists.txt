@@ -18,6 +18,13 @@ target_compile_options(unittest PRIVATE
         # we change this specific diagnostic back to a non-fatal warning.
         -Wno-error=variadic-macros
     >
+    $<$<CXX_COMPILER_ID:AppleClang,Clang>:
+        # GoogleTest 1.8.1 (the last version supporting C++98) uses C++11 constructs in
+        # its headers (e.g. trailing commas in enumerator lists), which Clang warns about
+        # when compiling with `-std=c++98`. With `-Werror`, this becomes a build failure.
+        # Demote it to a non-fatal warning so that we can still test the C++98 build.
+        -Wno-error=c++11-extensions
+    >
 )
 
 # Link the test executable with the main library and the test framework/library
