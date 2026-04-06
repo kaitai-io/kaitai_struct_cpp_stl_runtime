@@ -187,7 +187,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Run in NetBSD
-        uses: cross-platform-actions/action@e8a7b572196ff79ded1979dc2bb9ee67d1ddb252 # v0.29.0
+        uses: cross-platform-actions/action@492b0c80085400348c599edace11141a4ee73524 # v0.32.0
         with:
           operating_system: netbsd
           version: '10.1'
