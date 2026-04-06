@@ -125,7 +125,7 @@ jobs:
           docker rm u710
   windows:
     runs-on: windows-latest
-    # NB: see https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md for what's available in this image
+    # NB: see https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-Readme.md for what's available in this image
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
         with:
