@@ -17,7 +17,9 @@ jobs:
           - '11'
           - '20'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
       - name: Install GoogleTest
         env:
           CPP_STANDARD: ${{ matrix.cpp-standard }}
@@ -49,7 +51,9 @@ jobs:
           - '11'
           - '20'
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
       - name: Install GoogleTest
         env:
           CPP_STANDARD: ${{ matrix.cpp-standard }}
@@ -93,7 +97,9 @@ jobs:
   linux_ubuntu_7_10:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
       - name: docker pull
         run: |
           docker pull icomputer7/ancient-ubuntu-docker:gutsy
@@ -118,7 +124,9 @@ jobs:
     runs-on: windows-latest
     # NB: see https://github.com/actions/runner-images/blob/main/images/windows/Windows2022-Readme.md for what's available in this image
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
       - name: restore
         run: |
           C:\vcpkg\bootstrap-vcpkg.bat
@@ -132,9 +140,11 @@ jobs:
   freebsd:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
       - name: Run in FreeBSD
-        uses: vmactions/freebsd-vm@v1
+        uses: vmactions/freebsd-vm@7ca82f79fe3078fecded6d3a2bff094995447bbd # v1.4.4
         with:
           release: "14.3"
           usesh: true
@@ -165,9 +175,11 @@ jobs:
     # c++ (nb3 20231008) 10.5.0
     # Copyright (C) 2020 Free Software Foundation, Inc.
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
       - name: Run in NetBSD
-        uses: cross-platform-actions/action@v0.29.0
+        uses: cross-platform-actions/action@e8a7b572196ff79ded1979dc2bb9ee67d1ddb252 # v0.29.0
         with:
           operating_system: netbsd
           version: '10.1'
