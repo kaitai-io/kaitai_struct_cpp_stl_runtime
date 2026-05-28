@@ -179,6 +179,9 @@ jobs:
             .build/run-unittest
   netbsd:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: cpa.sh {0}
     # Doesn't use clang, has gcc:
     # c++ (nb3 20231008) 10.5.0
     # Copyright (C) 2020 Free Software Foundation, Inc.
@@ -186,29 +189,29 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - name: Run in NetBSD
+      - name: Start VM
         uses: cross-platform-actions/action@0c165ad7eb2d6a7e8552d6af5aad2bbedfc646b0 # v1.1.0
         with:
           operating_system: netbsd
           version: '10.1'
-          run: |
-            set -x
-            echo '#### System information'
-            uname -a
-            echo "$SHELL"
-            pwd
-            ls -la
-            whoami
-            env | sort
-            c++ --version
-            gcc --version
-
-            sudo pkgin update
-            sudo pkgin -y install cmake
-            sudo pkgin -y install googletest
-
-            echo '#### Building'
-            .build/build -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
-
-            echo '#### Testing'
-            .build/run-unittest
+      - name: Print system information
+        run: |
+          set -x
+          uname -a
+          echo "$SHELL"
+          pwd
+          ls -la
+          whoami
+          env | sort
+          c++ --version
+          gcc --version
+      - name: Update package lists
+        run: sudo pkgin update
+      - name: Install packages
+        run: |
+          sudo pkgin -y install cmake
+          sudo pkgin -y install googletest
+      - name: Build
+        run: .build/build -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
+      - name: Run tests
+        run: .build/run-unittest
