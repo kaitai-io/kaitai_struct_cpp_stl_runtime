@@ -208,9 +208,7 @@ jobs:
       - name: Update package lists
         run: sudo pkgin update
       - name: Install packages
-        run: |
-          sudo pkgin -y install cmake
-          sudo pkgin -y install googletest
+        run: sudo pkgin -y install cmake googletest
       - name: Build
         run: .build/build -DCMAKE_CXX_STANDARD=11 -DCMAKE_CXX_STANDARD_REQUIRED=ON -DCMAKE_CXX_EXTENSIONS=OFF
       - name: Run tests
