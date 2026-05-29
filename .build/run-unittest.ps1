@@ -1,12 +1,21 @@
+# This script requires at least PowerShell 7.4 to run, as it relies on support
+# for the `$PSNativeCommandUseErrorActionPreference` variable for proper error
+# handling.
+#Requires -Version 7.4
+
 <#
 .DESCRIPTION
 Runs unit tests on Windows
+
+Requires PowerShell 7.4 or later.
 #>
 
 # Standard boilerplate
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+# Treat non-zero exit codes from native commands as standard PowerShell errors.
+$PSNativeCommandUseErrorActionPreference = $true
 
 # Go to repo root
 $repoRoot = (Resolve-Path "$PSScriptRoot\..").Path
@@ -24,7 +33,7 @@ try {
     # passed to the script (see https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_automatic_variables?view=powershell-7.5#args).
     # We use [splatting](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_splatting?view=powershell-7.5)
     # to pass all received arguments to the test runner.
-    ./tests/Debug/unittest.exe @args
+    .\tests\Debug\unittest.exe @args
 } finally {
     Pop-Location
 }
