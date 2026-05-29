@@ -136,9 +136,7 @@ jobs:
         with:
           persist-credentials: false
       - name: restore
-        run: |
-          C:\vcpkg\bootstrap-vcpkg.bat
-          C:\vcpkg\vcpkg install gtest:x64-windows zlib:x64-windows
+        run: vcpkg install gtest:x64-windows zlib:x64-windows
       - name: build
         run: |
           .build\build.ps1 -GTestPath C:\vcpkg\installed\x64-windows -- `
