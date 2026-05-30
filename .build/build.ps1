@@ -1,8 +1,14 @@
+# This script requires at least PowerShell 7.4 to run, as it relies on support
+# for the `$PSNativeCommandUseErrorActionPreference` variable for proper error
+# handling.
+#Requires -Version 7.4
+
 <#
 .DESCRIPTION
 Builds Kaitai Struct C++ runtime library and unit tests
 
 Requires:
+- PowerShell 7.4 or later
 - MSVC native tools installed and available in the command prompt
 - cmake/ctest available (normally installed with MSVC native tools)
 - GTest installed, path passed in `-GTestPath`
@@ -24,6 +30,8 @@ param (
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $PSDefaultParameterValues['*:ErrorAction'] = 'Stop'
+# Treat non-zero exit codes from native commands as standard PowerShell errors.
+$PSNativeCommandUseErrorActionPreference = $true
 
 # Go to repo root
 $repoRoot = (Resolve-Path "$PSScriptRoot\..").Path
@@ -34,17 +42,8 @@ try {
     cd build
 
     $env:VERBOSE = '1'
-
     cmake -DCMAKE_PREFIX_PATH="$GTestPath" -DSTRING_ENCODING_TYPE="$EncodingType" .. @ExtraArgs
-    if ($LastExitCode -ne 0) {
-        throw "'cmake' exited with code $LastExitCode"
-    }
-
     cmake --build . --config Debug
-    if ($LastExitCode -ne 0) {
-        throw "'cmake --build' exited with code $LastExitCode"
-    }
-
     cp $GTestPath\debug\bin\*.dll tests\Debug
     cp Debug\kaitai_struct_cpp_stl_runtime.dll tests\Debug
 } finally {
