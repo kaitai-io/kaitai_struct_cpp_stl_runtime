@@ -44,6 +44,7 @@ try {
     $env:VERBOSE = '1'
     cmake -DCMAKE_PREFIX_PATH="$GTestPath" -DSTRING_ENCODING_TYPE="$EncodingType" .. @ExtraArgs
     cmake --build . --config Debug
+    cp $GTestPath\bin\*.dll tests\Debug
     cp $GTestPath\debug\bin\*.dll tests\Debug
     cp Debug\kaitai_struct_cpp_stl_runtime.dll tests\Debug
 } finally {
