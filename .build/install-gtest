@@ -29,20 +29,25 @@ fi
 
 case $cpp_standard in
 	98)
-		# GoogleTest v1.8.1 seems to be the last version supporting C++98,
+		# GoogleTest v1.8.1 is the last version supporting C++98,
 		# see https://github.com/google/googletest/releases/tag/release-1.8.1
 		gtest_version_tag=release-1.8.1
 		;;
 	11)
-		# GoogleTest v1.12.1 seems to be the last version supporting C++11,
+		# GoogleTest v1.12.1 is the last version supporting C++11,
 		# see https://github.com/google/googletest/releases/tag/release-1.12.1
 		gtest_version_tag=release-1.12.1
 		;;
+	14)
+		# GoogleTest v1.16.0 is the last version supporting C++14,
+		# see https://github.com/google/googletest/releases/tag/v1.16.0
+		gtest_version_tag=v1.16.0
+		;;
 	*)
-		if [ "$cpp_standard" -ge 14 ] && [ "$cpp_standard" -le 26 ]; then
-			# GoogleTest v1.16.0 (the latest version at the time of writing) requires at
-			# least C++14, see https://github.com/google/googletest/releases/tag/v1.16.0
-			gtest_version_tag=v1.16.0
+		if [ "$cpp_standard" -ge 17 ] && [ "$cpp_standard" -le 26 ]; then
+			# GoogleTest v1.17.0 (the latest version at the time of writing) requires at
+			# least C++17, see https://github.com/google/googletest/releases/tag/v1.17.0
+			gtest_version_tag=v1.17.0
 		else
 			die "Error: unsupported value $1 of <cpp-standard>"
 		fi
