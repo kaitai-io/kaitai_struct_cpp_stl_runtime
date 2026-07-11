@@ -70,9 +70,17 @@ trap 'cleanup' INT TERM HUP EXIT
 git clone --depth 1 -b "$gtest_version_tag" -- https://github.com/google/googletest.git "$temp_dir"
 cd -- "$temp_dir"
 if [ "$gtest_version_tag" = release-1.8.1 ]; then
-	# We must apply a patch to fix `-Werror=maybe-uninitialized` (see
-	# https://github.com/google/googletest/issues/3219), otherwise it won't compile
+	# We must apply
+	# https://github.com/google/googletest/commit/4679637f1c9d5a0728bdc347a531737fad0b1ca3
+	# as a patch to fix `-Werror=maybe-uninitialized`, otherwise it won't
+	# compile (see https://github.com/google/googletest/issues/3219)
 	git apply -- "$script_dir"/gtest-v1.8.1-fix-Werror-maybe-uninitialized.patch
+elif [ "$gtest_version_tag" = v1.17.0 ]; then
+	# We must apply
+	# https://github.com/google/googletest/commit/fa8438ae6b70c57010177de47a9f13d7041a6328
+	# as a patch to fix `[-Werror,-Wcharacter-conversion]`, otherwise it won't
+	# compile with Clang 21+ (see https://github.com/google/googletest/issues/4948)
+	git apply -- "$script_dir"/gtest-v1.17.0-fix-Werror-character-conversion.patch
 fi
 mkdir build
 cd build
