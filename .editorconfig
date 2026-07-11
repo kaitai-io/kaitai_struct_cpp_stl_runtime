@@ -21,6 +21,10 @@ indent_style = space
 [*.ps1]
 indent_size = 4
 
+# In .patch files, trailing whitespace is significant
+[*.patch]
+trim_trailing_whitespace = false
+
 [*.yml]
 indent_size = 2
 
