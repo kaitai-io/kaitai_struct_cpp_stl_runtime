@@ -623,6 +623,70 @@ TEST(KaitaiStreamTest, bytes_to_str_invalid_seq_utf16le_incomplete_high_surrogat
 }
 #endif
 
+// Generated code constructs validation exceptions directly from the return value of a
+// getter, e.g. `throw validation_expr_error<uint8_t>(foo(), _io(), "/seq/0")`, with no
+// local variable keeping that return value alive. If the exception stored `actual` (and
+// friends) as a reference instead of a copy, the member would end up bound to a temporary
+// whose lifetime ends when the `throw` statement finishes, so reading it back from the
+// `catch` block would be undefined behavior. `returned_by_value()` mimics such a getter.
+namespace {
+    uint8_t returned_by_value() {
+        return 200;
+    }
+
+    // Runs unrelated code between the `throw` and the `catch`-side read, to make it more
+    // likely for a dangling reference to actually observe overwritten memory instead of
+    // the original value still happening to sit at the same stack address.
+    void clobber_stack() {
+        volatile uint8_t buf[256];
+        for (int i = 0; i < 256; i++) {
+            buf[i] = 0xAA;
+        }
+    }
+
+    // These accessors expose the otherwise-`protected` fields so the test can check that
+    // what comes out of the exception is what was thrown in, rather than dangling data.
+    template<typename T>
+    struct not_equal_probe : public kaitai::validation_not_equal_error<T> {
+        not_equal_probe(const T& expected, const T& actual, kaitai::kstream* io, const std::string& src_path):
+            kaitai::validation_not_equal_error<T>(expected, actual, io, src_path) {}
+        T expected() const { return this->m_expected; }
+        T actual() const { return this->m_actual; }
+    };
+
+    template<typename T>
+    struct expr_probe : public kaitai::validation_expr_error<T> {
+        expr_probe(const T& actual, kaitai::kstream* io, const std::string& src_path):
+            kaitai::validation_expr_error<T>(actual, io, src_path) {}
+        T actual() const { return this->m_actual; }
+    };
+}
+
+TEST(KaitaiExceptionsTest, validation_expr_error_keeps_value_thrown_by_value)
+{
+    SETUP_STREAM(0x00);
+    try {
+        throw expr_probe<uint8_t>(returned_by_value(), &ks, "/seq/0");
+        FAIL() << "Expected expr_probe to be thrown";
+    } catch (expr_probe<uint8_t>& e) {
+        clobber_stack();
+        EXPECT_EQ(e.actual(), 200);
+    }
+}
+
+TEST(KaitaiExceptionsTest, validation_not_equal_error_keeps_values_thrown_by_value)
+{
+    SETUP_STREAM(0x00);
+    try {
+        throw not_equal_probe<uint8_t>(returned_by_value(), returned_by_value(), &ks, "/seq/0");
+        FAIL() << "Expected not_equal_probe to be thrown";
+    } catch (not_equal_probe<uint8_t>& e) {
+        clobber_stack();
+        EXPECT_EQ(e.expected(), 200);
+        EXPECT_EQ(e.actual(), 200);
+    }
+}
+
 int main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

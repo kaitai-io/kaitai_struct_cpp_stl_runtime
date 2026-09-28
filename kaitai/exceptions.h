@@ -127,8 +127,8 @@ public:
     virtual ~validation_not_equal_error() KS_NOEXCEPT {};
 
 protected:
-    const T& m_expected;
-    const T& m_actual;
+    const T m_expected;
+    const T m_actual;
 };
 
 /**
@@ -150,8 +150,8 @@ public:
     virtual ~validation_less_than_error() KS_NOEXCEPT {};
 
 protected:
-    const T& m_min;
-    const T& m_actual;
+    const T m_min;
+    const T m_actual;
 };
 
 /**
@@ -173,8 +173,8 @@ public:
     virtual ~validation_greater_than_error() KS_NOEXCEPT {};
 
 protected:
-    const T& m_max;
-    const T& m_actual;
+    const T m_max;
+    const T m_actual;
 };
 
 /**
@@ -195,7 +195,7 @@ public:
     virtual ~validation_not_any_of_error() KS_NOEXCEPT {};
 
 protected:
-    const T& m_actual;
+    const T m_actual;
 };
 
 /**
@@ -216,7 +216,7 @@ public:
     virtual ~validation_not_in_enum_error() KS_NOEXCEPT {};
 
 protected:
-    const T& m_actual;
+    const T m_actual;
 };
 
 /**
@@ -237,7 +237,7 @@ public:
     virtual ~validation_expr_error() KS_NOEXCEPT {};
 
 protected:
-    const T& m_actual;
+    const T m_actual;
 };
 
 }
