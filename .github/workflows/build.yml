@@ -181,8 +181,8 @@ jobs:
       run:
         shell: cpa.sh {0}
     # Doesn't use clang, has gcc:
-    # c++ (nb3 20231008) 10.5.0
-    # Copyright (C) 2020 Free Software Foundation, Inc.
+    # c++ (nb3 20260326) 12.5.0
+    # Copyright (C) 2022 Free Software Foundation, Inc.
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -191,7 +191,7 @@ jobs:
         uses: cross-platform-actions/action@e0b9770014ba65d5e0815f15b74031c3a635f641 # v1.6.0
         with:
           operating_system: netbsd
-          version: '10.1'
+          version: '11.0'
       - name: Print system information
         run: |
           set -x
