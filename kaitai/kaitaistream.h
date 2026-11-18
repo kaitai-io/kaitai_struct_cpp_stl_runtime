@@ -229,6 +229,13 @@ public:
      */
     static int mod(int a, int b);
 
+    /**
+     * Performs modulo operation between two 64-bit integers: dividend `a`
+     * and divisor `b`. Divisor `b` is expected to be positive. The
+     * result is always 0 <= x <= b - 1.
+     */
+    static int64_t mod64(int64_t a, int64_t b);
+
     // NB: the following 6 overloads of `to_string` are exactly the ones that
     // [`std::to_string`](https://en.cppreference.com/w/cpp/string/basic_string/to_string) has.
     // Testing has shown that they are all necessary: if you remove any of them, you will get

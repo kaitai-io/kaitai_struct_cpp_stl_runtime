@@ -260,6 +260,36 @@ TEST(KaitaiStreamTest, string_to_int_garbage)
     }
 }
 
+TEST(KaitaiStreamTest, mod64)
+{
+    EXPECT_EQ(kaitai::kstream::mod64(7, 3), 1);
+    EXPECT_EQ(kaitai::kstream::mod64(-7, 3), 2);
+    // `mod()` would truncate these to 32 bits
+    EXPECT_EQ(kaitai::kstream::mod64(std::numeric_limits<int64_t>::max(), 1000), 807);
+    EXPECT_EQ(kaitai::kstream::mod64(std::numeric_limits<int64_t>::min(), 7), 6);
+    EXPECT_EQ(kaitai::kstream::mod64(-1, std::numeric_limits<int64_t>::max()), std::numeric_limits<int64_t>::max() - 1);
+}
+
+TEST(KaitaiStreamTest, mod64_divisor_zero)
+{
+    try {
+        kaitai::kstream::mod64(7, 0);
+        FAIL() << "Expected invalid_argument exception";
+    } catch (std::invalid_argument& e) {
+        EXPECT_EQ(e.what(), std::string("mod64: divisor b <= 0"));
+    }
+}
+
+TEST(KaitaiStreamTest, mod64_divisor_negative)
+{
+    try {
+        kaitai::kstream::mod64(7, -3);
+        FAIL() << "Expected invalid_argument exception";
+    } catch (std::invalid_argument& e) {
+        EXPECT_EQ(e.what(), std::string("mod64: divisor b <= 0"));
+    }
+}
+
 // Tests a successful zlib decompression.
 TEST(KaitaiStreamTest, process_zlib_ok)
 {

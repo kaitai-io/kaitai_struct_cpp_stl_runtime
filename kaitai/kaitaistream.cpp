@@ -814,6 +814,15 @@ int kaitai::kstream::mod(int a, int b) {
     return r;
 }
 
+int64_t kaitai::kstream::mod64(int64_t a, int64_t b) {
+    if (b <= 0)
+        throw std::invalid_argument("mod64: divisor b <= 0");
+    int64_t r = a % b;
+    if (r < 0)
+        r += b;
+    return r;
+}
+
 void kaitai::kstream::unsigned_to_decimal(uint64_t number, char *buf, std::size_t &buf_contents_start) {
     // Implementation inspired by https://ideone.com/nrQfA8 by Alf P. Steinbach
     // (see https://vitaut.net/posts/2013/integer-to-string-conversion-in-cplusplus/)
