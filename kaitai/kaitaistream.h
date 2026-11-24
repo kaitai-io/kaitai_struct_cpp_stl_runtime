@@ -2,7 +2,7 @@
 #define KAITAI_STREAM_H
 
 // Kaitai Struct runtime API version: x.y.z = 'xxxyyyzzz' decimal
-#define KAITAI_STRUCT_VERSION 11000L
+#define KAITAI_STRUCT_VERSION 2000000L
 
 // check for C++11 support - https://stackoverflow.com/a/40512515
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
